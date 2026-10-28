@@ -7,6 +7,8 @@ import {
   uploadFirst, pickFiles, browseImage, canBrowse, canUpload, filesFromEvent, urlFromDrop, imageFromDropData, showImage, shareImage
 } from "../images.js";
 
+import { canPickPlaceholder, pickPlaceholderDialog, isPlaceholder } from "../placeholders.js";
+
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
 
 const NOTE_FILTERS = ["all", "mine", "others"];
@@ -23,6 +25,7 @@ export class FaceSheet extends HandlebarsApplicationMixin(ApplicationV2) {
       deleteFace: FaceSheet.#onDeleteFace,
       forgetFace: FaceSheet.#onForgetFace,
       shareFace: FaceSheet.#onShareFace,
+      pickPlaceholder: FaceSheet.#onPickPlaceholder,
       viewPortrait: FaceSheet.#onViewPortrait,
       browsePortrait: FaceSheet.#onBrowsePortrait,
       uploadPortrait: FaceSheet.#onUploadPortrait,
@@ -95,10 +98,36 @@ export class FaceSheet extends HandlebarsApplicationMixin(ApplicationV2) {
     return true;
   }
 
-  /** GM: puts a face that only some players know into every player's Familiar Faces. */
+  /**
+   * Puts a face that only some players know into every player's Familiar Faces. Players confirm first, with what will
+   * be shared and what stays private.
+   */
   static async shareWithParty(faceId) {
     const face = store.getFace(faceId);
-    if (!game.user.isGM || !face?.knownBy) return;
+    if (!store.canShareFace(face)) return;
+    if (!game.user.isGM) {
+      const notes = store.notesFor(faceId);
+      const shared = notes.filter(n => n.visibility === "everyone").length;
+      const some = notes.filter(n => n.visibility === "some").length;
+      const own = notes.filter(n => n.visibility === "private").length;
+      const name = escapeHTML(face.name);
+      const lines = [
+        `<p>${t("ShareConfirm", { name })}</p>`,
+        `<ul class="dxff-share-summary">`,
+        `<li><i class="fa-solid fa-address-card" inert></i> ${escapeHTML(t("ShareConfirmFace"))}</li>`,
+        shared ? `<li><i class="fa-solid fa-users" inert></i> ${escapeHTML(t(shared === 1 ? "ShareConfirmNote" : "ShareConfirmNotes", { count: shared }))}</li>` : "",
+        some ? `<li><i class="fa-solid fa-user-check" inert></i> ${escapeHTML(t("ShareConfirmSome", { count: some }))}</li>` : "",
+        `<li><i class="fa-solid fa-lock" inert></i> ${escapeHTML(t("ShareConfirmPrivate"))}${own ? ` (${own})` : ""}</li>`,
+        `</ul>`
+      ];
+      const ok = await DialogV2.confirm({
+        window: { title: t("ShareWithParty"), icon: "fa-solid fa-users" },
+        classes: ["dxff-dialog"],
+        content: `<div class="dxff">${lines.join("")}</div>`,
+        rejectClose: false
+      });
+      if (!ok) return;
+    }
     try {
       await store.shareWithParty(faceId);
       ui.notifications.info(t("SharedWithParty", { name: escapeHTML(face.name) }));
@@ -200,9 +229,11 @@ export class FaceSheet extends HandlebarsApplicationMixin(ApplicationV2) {
       canEdit: store.canEditFace(face),
       canDelete: store.canDeleteFace(face),
       canForget: store.canForgetFace(face),
-      canShare: game.user.isGM && !!face.knownBy,
+      canShare: store.canShareFace(face),
       knownBy: face.knownBy ? face.knownBy.map(id => id === game.user.id ? t("You") : userInfo(id).name).join(", ") || "—" : "",
-      hasActions: store.canEditFace(face) || store.canForgetFace(face),
+      hasActions: store.canEditFace(face) || store.canForgetFace(face) || store.canShareFace(face),
+      canPickPlaceholder: canPickPlaceholder(face, store.canEditFace(face)),
+      placeholderLook: isPlaceholder(face.img),
       canUpload: game.user.isGM && canUpload(),
       canBrowse: game.user.isGM && canBrowse(),
       editing: this.editing,
@@ -395,6 +426,21 @@ export class FaceSheet extends HandlebarsApplicationMixin(ApplicationV2) {
 
   static async #onForgetFace() {
     if (await FaceSheet.confirmForget(this.faceId)) this.close();
+  }
+
+  /** Pick (or change, or clear) a placeholder look for a face without a portrait of its own. */
+  static async #onPickPlaceholder() {
+    const face = this.face;
+    if (!canPickPlaceholder(face, store.canEditFace(face))) return;
+    const src = await pickPlaceholderDialog(face.img, face.name);
+    if (src === null || src === face.img) return;
+    // Clearing only removes a placeholder; a real portrait is removed with its own button (GM).
+    if (!src && !isPlaceholder(face.img)) return;
+    try {
+      await store.setImage(this.faceId, src);
+    } catch (err) {
+      ui.notifications.error(err.message);
+    }
   }
 
   static #onShareFace() {

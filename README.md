@@ -42,13 +42,15 @@ Only the GM can set portraits.
 
 ### Managing faces
 
-Right-click a face in the tab to open it, change or remove its portrait, show the portrait to the players, or remove the face. You see every face, also the ones players added for themselves; those have a small lock next to the name that tells who has them, and **Share with all players** (in the right-click menu and the NPC's window) puts them in everyone's list. **Edit** in the NPC's window changes the name, where they were first met and what the party knows. Removing a face also removes everyone's notes about it.
+Right-click a face in the tab to open it, change or remove its portrait, show the portrait to the players, or remove the face. You see every face, also the ones players added for themselves; those have a small lock next to the name that tells who has them, and **Share with the party** (in the right-click menu, on the card and in the NPC's window) puts them in everyone's list. **Edit** in the NPC's window changes the name, where they were first met and what the party knows. Removing a face also removes everyone's notes about it.
 
 ## For players
 
 - Open the **Familiar Faces** tab (the theatre-masks icon) to see everyone your party has met.
 - **Search** finds names, places, the GM's description and the notes you can see. Put several words in "quotes" to search for them together.
 - **Right-click an NPC's token** on the map → *Add Name to my Familiar Faces*. They go into your own list only, with the token's name and image and the scene as where you met them; the other players don't see them unless they add them too, or the GM shares them with everyone. If they're already in your list, the menu opens them instead. **Remove from my faces** in their window takes them out of your list again (your private notes about them are kept). Hold **Shift** to skip the menu.
+- **Add someone you met** – the button at the bottom of the tab, for people without a token or character sheet: a name you overheard, the bartender nobody put on the map. Give a name, where you met them and (optionally) what you know about them, and pick a **look**: one of 24 placeholder pictures that give a feel for who they are (a crown for royalty, an anvil and hammer for a smith, a coin purse for a merchant, a hood for a mysterious stranger…). They go into your own list, just like an NPC you added from a token, and their window opens so you can write notes. Not available during combat. Change the look later with the theatre-masks button on their portrait (as long as they have no real portrait; the GM can always change it, and a portrait the GM sets replaces the placeholder).
+- **Share with the party** – the people icon on the card of an NPC only you (or a few of you) have, also in their window and right-click menu. After a quick confirmation every player gets them: the name, portrait, where they were first met, what's known about them, and the notes written for the party or for chosen players. Your **Only me** notes stay private. The others get a notification saying you shared them.
 - **Group by → Place met** lists people under the place they were first met (*First met at*, or the place of the earliest note when that is empty). Click a place on a card to show only the people met there.
 - Click a face to open it and **add a note**: where they were when you met them (pick a place you've used before or a scene, or click the map button for the current scene), and what you want to remember. **Ctrl+Enter** adds the note.
 - Choose who can read each note:
@@ -70,7 +72,21 @@ Right-click a face in the tab to open it, change or remove its portrait, show th
 | Portrait upload folder | World | Where uploaded portraits go. Empty: `worlds/<world>/familiar-faces`. |
 | Right-click selected names | User | The *Add to Familiar Faces* menu on selected names. |
 | Right-click journal images (GM) | User | The *Add image to NPC* menu on journal images. |
+| Show the names of NPCs the party knows | World | When an NPC is in every player's Familiar Faces, all its tokens show their name to everyone on hover (see below). On by default. |
 | Right-click NPC tokens | User | Players: the *Add to my Familiar Faces* menu on NPC tokens. GM: the Familiar Faces button on NPC token HUDs. |
+
+## No new faces in the middle of a fight
+
+Nobody has time to memorize a face during combat. While a combat encounter is running (it has started), players can't add faces – not from tokens, selected names, journals or the **Add face** button – and can't share faces with the party. Right-clicking an NPC token or a selected name says so instead, and the Add face button is greyed out. Opening faces and writing notes still work, and everything is back as soon as the combat ends. The GM can still add and share faces during combat.
+
+## Names on hover for NPCs the party knows
+
+As soon as an NPC is in every player's Familiar Faces – the GM added them for everyone, or a player shared them with the party – all tokens of that NPC show their name to everyone on hover (Display Name: *Hovered by Anyone*): the tokens already placed in every scene, and the actor's prototype token, so tokens placed later do the same. So once the party has met a "Neverwinter Guard", every Neverwinter Guard token shows its name.
+
+- It covers the face's own actor (faces added from a token or the Actors directory remember it), NPC actors with the face's name, and NPC tokens carrying that name.
+- A GM has to be logged in for tokens to change; faces shared while no GM is online are caught up when a GM logs in.
+- Tokens that already show their name to everyone (*Always for Everyone*) are left alone, and the module never hides a name again – removing a face doesn't change its tokens back.
+- Turn it off with **Show the names of NPCs the party knows** in the module settings.
 
 ## Works with Dxcufgb's Quest log
 
@@ -88,10 +104,15 @@ await ff.createFace({ name: "Mira Ashgrove", metAt: "Saltmarsh" }); // no window
 ff.bindImage("path/to/mira.webp");           // opens the Add image to NPC search
 ff.addToken(token);                          // GM: for all players; player: to their own Familiar Faces
 ff.addActor(actor);                          // GM: add an NPC actor for all players
-ff.shareWithParty(id);                       // GM: put a face some players added in everyone's list
+ff.shareWithParty(id);                       // GM, or a player who has the face: put it in everyone's list
 ff.forgetFace(id);                           // player: remove a face from their own list
+await ff.syncNameplates();                   // GM: update the tokens of party-known NPCs now
 ff.openFace(id);
 ```
+
+## Credits
+
+The placeholder pictures use symbols from [game-icons.net](https://game-icons.net) by Lorc, Delapouite and contributors, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), recoloured and placed on backgrounds (see `assets/placeholders/LICENSE.txt`).
 
 ## Support
 

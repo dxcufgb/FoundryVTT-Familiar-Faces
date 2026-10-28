@@ -32,6 +32,12 @@
     "AddedOn": "Added",
     "AlreadyExists": "{name} is already in Familiar Faces.",
     "CannotAdd": "Only the GM can add new faces.",
+    "InCombat": "No time to memorize faces in the middle of a fight. Try again once combat is over.",
+    "AddMet": "Add someone you met",
+    "AddMetHint": "Someone without a token or character sheet: a name you overheard, a face in the crowd",
+    "AddMetIntro": "Someone you met who isn't on the map: they go into your own Familiar Faces.",
+    "AddMetHintPrivate": "Only you (and the GM) see them until you share them with the party.",
+    "AlreadyYours": "{name} is already in your Familiar Faces.",
     "NameRequired": "A name is needed.",
     "Unnamed": "Unnamed",
     "From": "From",
@@ -42,6 +48,7 @@
     "Edit": "Edit",
 
     "Field": {
+      "MetInfo": "What you know about them",
       "Name": "Name",
       "MetAt": "First met at",
       "Info": "What the party knows",
@@ -49,6 +56,8 @@
       "Note": "Note"
     },
     "Placeholder": {
+      "MetName": "Their name, or how you'd recognise them",
+      "MetInfo": "What they look like, what they do… (optional)",
       "MetAt": "A place, a scene…",
       "Info": "A short description everyone can see (optional)",
       "Place": "Where were they when you met them?",
@@ -60,6 +69,36 @@
     "SourceGone": "The journal this face came from no longer exists.",
 
     "Portrait": "Portrait",
+    "PlaceholderLegend": "Look (until there's a portrait)",
+    "PickLook": "Choose a look",
+    "PickLookFor": "Choose a look for {name}",
+    "PickLookHint": "Pick a picture that gives a feel for who they are, until there's a real portrait",
+    "Roles": {
+      "royalty": "King or queen",
+      "noble": "Noble",
+      "smith": "Smith",
+      "merchant": "Merchant",
+      "innkeeper": "Innkeeper or barkeep",
+      "cook": "Cook",
+      "guard": "Guard",
+      "soldier": "Soldier or mercenary",
+      "priest": "Priest",
+      "wizard": "Wizard",
+      "scholar": "Scholar",
+      "scribe": "Scribe or official",
+      "rogue": "Rogue or thief",
+      "stranger": "Mysterious stranger",
+      "cultist": "Cultist or mystic",
+      "farmer": "Farmer",
+      "sailor": "Sailor",
+      "fisher": "Fisher",
+      "hunter": "Hunter",
+      "healer": "Healer",
+      "bard": "Bard",
+      "judge": "Judge or lawkeeper",
+      "beast": "Beast or creature",
+      "jester": "Jester or entertainer"
+    },
     "NoPortrait": "No portrait",
     "PortraitDropHint": "Drop an image, an actor or a journal image page here to use it as the portrait",
     "BrowsePortrait": "Pick a portrait from the files",
@@ -86,8 +125,14 @@
     "ForgetFace": "Remove from my faces",
     "ForgetFaceConfirm": "Remove <b>{name}</b> from your Familiar Faces? The other players who added them keep them, and your private notes are kept in case you add them again.",
     "ForgetFaceConfirmLast": "Remove <b>{name}</b> from your Familiar Faces? Nobody else has added them, so they are removed. Your private notes are kept in case you add them again.",
-    "ShareWithParty": "Share with all players",
-    "ShareWithPartyHint": "Put them in every player's Familiar Faces",
+    "ShareWithParty": "Share with the party",
+    "ShareWithPartyHint": "Put them in every player's Familiar Faces. “Only me” notes stay private.",
+    "ShareConfirm": "Share <b>{name}</b> with the party? Every player gets them in their Familiar Faces.",
+    "ShareConfirmFace": "Name, portrait, where they were first met and what's known about them",
+    "ShareConfirmNote": "1 note shared with the party",
+    "ShareConfirmNotes": "{count} notes shared with the party",
+    "ShareConfirmSome": "Notes shared with chosen players ({count}) stay with those players",
+    "ShareConfirmPrivate": "Your “Only me” notes stay private",
     "SharedWithParty": "{name} is now in every player's Familiar Faces.",
     "AddedForMe": "{name} was added to your Familiar Faces.",
     "KnownByLabel": "Only known by",
@@ -134,6 +179,7 @@
     "StorePrivate": "Familiar Faces – {name}'s notes",
 
     "NotifyCreated": "New familiar face: <b>{name}</b>",
+    "NotifySharedBy": "{by} shared <b>{name}</b> with the party.",
     "NotifyPortrait": "<b>{name}</b> has a new portrait.",
     "NotifyNote": "{by} shared a note about <b>{name}</b>.",
 
@@ -152,6 +198,7 @@
       "NewFaceWithImage": "New face with this image…",
       "ViewImage": "View image",
       "AddNpcForMe": "Add {name} to my Familiar Faces",
+      "InCombat": "In combat – no time to memorize faces",
       "AddNpcForAll": "Add {name} to Familiar Faces for all players",
       "AddActor": "Add to Familiar Faces"
     },
@@ -176,6 +223,10 @@
       "ImageMenu": {
         "Name": "Right-click journal images (GM)",
         "Hint": "Right-clicking an image in a journal offers to use it as the portrait of a familiar face. Hold Shift for the normal menu."
+      },
+      "KnownNameplates": {
+        "Name": "Show the names of NPCs the party knows",
+        "Hint": "When an NPC is in every player's Familiar Faces, all tokens of that NPC (in every scene, and new ones) show their name to everyone on hover. Needs a GM logged in; names are never hidden again by the module."
       },
       "TokenMenu": {
         "Name": "Right-click NPC tokens",

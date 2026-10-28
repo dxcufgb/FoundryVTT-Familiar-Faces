@@ -1,4 +1,4 @@
-import { MODULE_ID, VISIBILITY, t, isResponsibleGM, randomId, cleanLine } from "./util.js";
+import { MODULE_ID, VISIBILITY, t, isResponsibleGM, randomId, cleanLine, combatBlocks } from "./util.js";
 
 /*
  * Everything lives in the flags of journal entries that the module creates and hides from the Journal directory:
@@ -148,6 +148,11 @@ export function canDeleteFace(face) {
   return canEditFace(face) && (game.user.isGM || !face.knownBy);
 }
 
+/** The GM, or a player who has this face in their own list, can put it in every player's Familiar Faces. */
+export function canShareFace(face) {
+  return !!face?.knownBy && !combatBlocks() && (game.user.isGM || face.knownBy.includes(game.user.id));
+}
+
 export function canForgetFace(face) {
   return !!face && !game.user.isGM && !!face.knownBy?.includes(game.user.id);
 }
@@ -156,6 +161,7 @@ export function canForgetFace(face) {
  * Creates a face. knownBy: null for the whole party, or the ids of the players whose Familiar Faces it is in.
  */
 export async function createFace({ name, img = "", metAt = "", info = "", source = null, actor = "", knownBy = null } = {}) {
+  if (combatBlocks()) throw new Error(t("InCombat"));
   const clean = cleanLine(name, 80);
   if (!clean) throw new Error(t("NameRequired"));
   const id = randomId();
@@ -179,6 +185,7 @@ export async function createFace({ name, img = "", metAt = "", info = "", source
 
 /** Adds a face that only some players know to a player's Familiar Faces. */
 export async function addKnower(id, userId = game.user.id) {
+  if (combatBlocks()) throw new Error(t("InCombat"));
   const face = getFace(id, { any: true });
   if (!face) throw new Error(t("FaceGone"));
   if (!face.knownBy || face.knownBy.includes(userId)) return false;
@@ -189,16 +196,21 @@ export async function addKnower(id, userId = game.user.id) {
   return true;
 }
 
-/** GM: puts a face that only some players know into everyone's Familiar Faces. */
+/**
+ * Puts a face that only some players know into everyone's Familiar Faces, as if the GM had added it for the party:
+ * the face itself (name, portrait, where they were met, what's known) and every note shared with the party or with
+ * chosen players come along. "Only me" notes live in each author's own store and stay private.
+ * The GM can share any such face; a player only one that is in their own list.
+ */
 export async function shareWithParty(id) {
-  if (!game.user.isGM) return false;
-  const face = getFace(id, { any: true });
+  if (combatBlocks()) throw new Error(t("InCombat"));
+  const face = getFace(id, { any: game.user.isGM });
   if (!face) throw new Error(t("FaceGone"));
-  if (!face.knownBy) return false;
+  if (!canShareFace(face)) return false;
   await write(getShared(), {
     [`${FACES}.${id}.-=knownBy`]: null,
     [`${FACES}.${id}.updatedAt`]: Date.now()
-  }, { type: "known", faceId: id, before: face.knownBy });
+  }, { type: "known", faceId: id, before: face.knownBy, sharedBy: game.user.id });
   return true;
 }
 
