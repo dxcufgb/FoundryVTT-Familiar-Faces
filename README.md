@@ -6,7 +6,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/dxcufgb/FoundryVTT-familiar-faces/ci.yml?branch=main&label=CI)](https://github.com/dxcufgb/FoundryVTT-familiar-faces/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/dxcufgb/FoundryVTT-familiar-faces)](LICENSE)
 
-Everyone the party has met, in its own tab in the right sidebar. The GM adds NPCs straight from the journals by selecting a name and right-clicking it, and gives them a portrait by right-clicking an image. Each player keeps their own notes about every NPC, writes down where they met them, and decides who gets to read each note: only themselves, the whole party, or a few chosen players.
+Everyone the party has met, in its own tab in the right sidebar. The GM adds NPCs straight from the journals by selecting a name and right-clicking it, or from the Actors directory or an NPC's token, and gives them a portrait by right-clicking an image. Players add the NPCs they meet to their own list by right-clicking a token. Each player keeps their own notes about every NPC, writes down where they met them, and decides who gets to read each note: only themselves, the whole party, or a few chosen players.
 
 **Foundry VTT:** v13 · **System:** any
 
