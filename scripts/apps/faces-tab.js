@@ -1,8 +1,9 @@
-import { MODULE_ID, TEMPLATE_PATH, t, nameHue, initials, canAddFaces, userInfo } from "../util.js";
+import { MODULE_ID, TEMPLATE_PATH, t, nameHue, initials, canAddFaces, mayAddFaces, combatBlocks, userInfo } from "../util.js";
 import * as store from "../store.js";
 import { tokenize, matchFace, highlight } from "../search.js";
 import { FaceSheet } from "./face-sheet.js";
 import { addFaceDialog } from "../capture.js";
+import { addMetFaceDialog } from "../npcs.js";
 import { browseImage, shareImage } from "../images.js";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
@@ -24,14 +25,17 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       openFace: FacesTab.#onOpenFace,
       toggleGroup: FacesTab.#onToggleGroup,
       clearSearch: FacesTab.#onClearSearch,
-      filterPlace: FacesTab.#onFilterPlace
+      filterPlace: FacesTab.#onFilterPlace,
+      shareFace: FacesTab.#onShareFace,
+      addMet: () => addMetFaceDialog()
     }
   };
 
   static PARTS = {
     header: { template: `${TEMPLATE_PATH}/tab-header.hbs` },
     filters: { template: `${TEMPLATE_PATH}/tab-filters.hbs` },
-    list: { template: `${TEMPLATE_PATH}/tab-list.hbs`, scrollable: [""] }
+    list: { template: `${TEMPLATE_PATH}/tab-list.hbs`, scrollable: [""] },
+    footer: { template: `${TEMPLATE_PATH}/tab-footer.hbs` }
   };
 
   /** Free-text search, shared by the sidebar tab and its pop-out. */
@@ -49,7 +53,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
   /** Re-renders the parts that depend on data (the search box keeps focus and text). */
   refresh() {
     if (!this.rendered) return;
-    this.render({ parts: ["filters", "list"] });
+    this.render({ parts: ["filters", "list", "footer"] });
   }
 
   /* -------------------------------------------- */
@@ -74,6 +78,9 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       ready,
       isGM: game.user.isGM,
       canAdd: canAddFaces(),
+      addBlocked: mayAddFaces() && combatBlocks(),
+      canAddMet: !game.user.isGM && ready,
+      metBlocked: combatBlocks(),
       search: FacesTab.search,
       searching: terms.length > 0,
       groupBy: this.groupBy,
@@ -109,6 +116,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
     const mine = notes.filter(n => n.createdBy === game.user.id).length;
     return {
       knownBy: FacesTab.knownByLabel(face),
+      canShare: store.canShareFace(face),
       id: face.id,
       name: face.name,
       nameHTML: highlight(face.name, terms),
@@ -226,7 +234,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       },
       {
         name: "DXFF.ShareWithParty", icon: '<i class="fa-solid fa-users"></i>',
-        condition: li => game.user.isGM && !!face(li)?.knownBy,
+        condition: li => store.canShareFace(face(li)),
         callback: li => FaceSheet.shareWithParty(li.dataset.faceId)
       },
       {
@@ -268,6 +276,12 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
     const place = target.dataset.place;
     FacesTab.search = FacesTab.search.trim().toLowerCase() === `"${place}"`.toLowerCase() ? "" : `"${place}"`;
     FacesTab.renderAllLists();
+  }
+
+  static #onShareFace(event, target) {
+    event.stopPropagation();
+    const id = target.closest("[data-face-id]")?.dataset.faceId;
+    if (id) FaceSheet.shareWithParty(id);
   }
 
   static #onClearSearch() {

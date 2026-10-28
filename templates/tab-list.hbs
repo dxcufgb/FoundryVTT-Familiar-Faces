@@ -33,6 +33,12 @@
           {{/if}}
           {{#if snippet}}<div class="dxff-snippet">{{{snippet}}}</div>{{/if}}
         </div>
+        {{#if canShare}}
+        <button type="button" class="dxff-icon-btn dxff-share-face" data-action="shareFace"
+                data-tooltip="DXFF.ShareWithPartyHint" aria-label="{{localize "DXFF.ShareWithParty"}}">
+          <i class="fa-solid fa-users" inert></i>
+        </button>
+        {{/if}}
         {{#if noteCount}}
         <div class="dxff-note-count" data-tooltip="{{localize "DXFF.NoteCountHint" mine=mineCount others=othersCount}}">
           <i class="fa-solid fa-feather" inert></i>{{noteCount}}

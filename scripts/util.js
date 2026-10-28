@@ -192,5 +192,23 @@ export function insertAtCursor(field, text) {
 
 /** Who may add new faces: the GM, and players when the world setting allows it. */
 export function canAddFaces() {
+  return mayAddFaces() && !combatBlocks();
+}
+
+/** Who may add faces at all, combat aside. */
+export function mayAddFaces() {
   return game.user.isGM || !!game.settings.get(MODULE_ID, "playersCanAdd");
+}
+
+/** A fight is going on: a combat encounter that has started (round 1 or later). */
+export function inCombat() {
+  return !!game.combats?.some(c => c.started);
+}
+
+/**
+ * Nobody has time to memorize a face in the middle of a fight: while a combat is running, players can't add faces
+ * (to their own list or the party's) or share them with the party. The GM still can.
+ */
+export function combatBlocks() {
+  return !game.user.isGM && inCombat();
 }

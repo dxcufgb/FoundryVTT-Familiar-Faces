@@ -1,0 +1,5 @@
+Placeholder portraits for Dxcufgb's Familiar Faces.
+
+The symbols are from game-icons.net (https://game-icons.net) by Lorc, Delapouite and the other game-icons.net
+contributors, licensed under Creative Commons Attribution 3.0 (CC BY 3.0, https://creativecommons.org/licenses/by/3.0/).
+They were recoloured and placed on coloured backgrounds for this module. Each SVG names the icon it uses.

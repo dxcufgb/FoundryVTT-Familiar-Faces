@@ -13,8 +13,11 @@
       {{else}}
       <span class="dxff-portrait-initials">{{initials}}</span>
       {{/if}}
-      {{#if isGM}}
+      {{#if canPickPlaceholder}}
       <div class="dxff-portrait-tools">
+        <button type="button" class="dxff-icon-btn" data-action="pickPlaceholder" data-tooltip="DXFF.PickLookHint"
+                aria-label="{{localize "DXFF.PickLook"}}"><i class="fa-solid fa-masks-theater" inert></i></button>
+        {{#if isGM}}
         {{#if canBrowse}}
         <button type="button" class="dxff-icon-btn" data-action="browsePortrait" data-tooltip="DXFF.BrowsePortrait"
                 aria-label="{{localize "DXFF.BrowsePortrait"}}"><i class="fa-solid fa-folder-open" inert></i></button>
@@ -28,6 +31,7 @@
                 aria-label="{{localize "DXFF.ShowPortrait"}}"><i class="fa-solid fa-eye" inert></i></button>
         <button type="button" class="dxff-icon-btn dxff-danger" data-action="removePortrait" data-tooltip="DXFF.RemovePortrait"
                 aria-label="{{localize "DXFF.RemovePortrait"}}"><i class="fa-solid fa-trash" inert></i></button>
+        {{/if}}
         {{/if}}
       </div>
       {{/if}}

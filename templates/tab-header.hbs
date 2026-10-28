@@ -8,5 +8,9 @@
   <button type="button" class="dxff-add-face" data-action="addFace" data-tooltip="DXFF.AddFaceHint">
     <i class="fa-solid fa-user-plus" inert></i> {{localize "DXFF.AddFace"}}
   </button>
+  {{else if addBlocked}}
+  <span class="dxff-add-blocked" data-tooltip="DXFF.InCombat">
+    <button type="button" class="dxff-add-face" disabled><i class="fa-solid fa-swords" inert></i> {{localize "DXFF.AddFace"}}</button>
+  </span>
   {{/if}}
 </header>

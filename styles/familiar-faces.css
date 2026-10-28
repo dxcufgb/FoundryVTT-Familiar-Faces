@@ -232,6 +232,16 @@
   overflow-y: auto;
   padding: 6px 6px 12px;
 }
+.dxff-dialog .dxff-pick-images.dxff-placeholders { gap: 4px; }
+.dxff-dialog .dxff-placeholders .dxff-pick-image.dxff-pick-placeholder { width: 44px; height: 44px; border-radius: 8px; }
+.dxff-dialog .dxff-placeholders .dxff-pick-placeholder span { font-size: 16px; }
+.dxff-tab .dxff-tab-footer {
+  flex: none;
+  padding: 6px 8px 8px;
+  border-top: 1px solid var(--dxff-border);
+}
+.dxff-tab .dxff-tab-footer .dxff-add-met,
+.dxff-tab .dxff-tab-footer .dxff-add-met-wrap { width: 100%; }
 
 .dxff-tab .dxff-group + .dxff-group { margin-top: 6px; }
 .dxff-tab .dxff-group-header {
@@ -727,6 +737,13 @@ body.theme-light #dxff-context-menu { background: #f6f1e7; }
 
 /* A face only some players have in their Familiar Faces. */
 .dxff-tab .dxff-known { margin-left: 6px; font-size: 10px; color: var(--dxff-muted); vertical-align: 1px; }
+.dxff-tab .dxff-share-face { width: 24px; height: 24px; font-size: 11px; }
+.dxff-tab .dxff-add-blocked { flex: none; display: inline-flex; cursor: not-allowed; }
+.dxff-tab .dxff-add-blocked button:disabled { opacity: 0.45; pointer-events: none; }
+.dxff-tab .dxff-share-face:hover { color: var(--dxff-accent); }
+.dxff-dialog .dxff-share-summary { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.dxff-dialog .dxff-share-summary i { width: 16px; text-align: center; color: var(--dxff-accent); }
+.dxff-dialog .dxff-share-summary .fa-lock { color: var(--dxff-private); }
 
 /* GM: Familiar Faces button on the token HUD of NPCs. */
 #token-hud .dxff-hud.active i { color: var(--color-warm-2, #ee9b3a); }

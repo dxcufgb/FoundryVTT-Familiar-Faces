@@ -18,7 +18,7 @@ System-agnostic. No build step and no npm dependencies.
   default NONE, that user OWNER) with their private notes in the same `notes` shape. A face with `knownBy: {<userId>:
   true}` is only in those players' lists (and the GM's); no `knownBy` = the whole party. `allFaces`/`getFace`/
   `findByName` only return faces the current user can see (`canSeeFace`); `everyFace` / `{any: true}` are for
-  bookkeeping only. A player removes such a face from their list with `forgetFace` (the last one removes the face). `ensureStores` runs on the
+  bookkeeping only. A player removes such a face from their list with `forgetFace` (the last one removes the face). `shareWithParty` drops `knownBy` (`canShareFace`: the GM, or a player in `knownBy`); shared notes come along, private notes stay in their authors' stores; the `known` event carries `sharedBy` for the notification. `ensureStores` runs on the
   responsible GM only. Visibility of a note = which store it is in + `sharedWith`; `updateNote` moves a note between
   stores (write the new copy first, then delete the old one, same id).
 - `scripts/apps/faces-tab.js` – `FacesTab` (HandlebarsApplicationMixin(AbstractSidebarTab)): parts `header` (search,
@@ -26,6 +26,19 @@ System-agnostic. No build step and no npm dependencies.
 - `scripts/apps/face-sheet.js` – `FaceSheet`: one NPC: portrait (GM tools, drop target), details (view/edit), note
   composer and notes. Sheet state (`draft`, `composer`, `editNote`) is bound with `data-bind`, so re-renders caused
   by other people's writes keep what the user is typing; focus is restored in `_onRender`.
+- Tab footer (`tab-footer.hbs`, players only): *Add someone you met* → `addMetFaceDialog` (npcs.js) → `addNpcForMe` with
+  no image or actor, so the face gets `knownBy: [me]` (or the player is added as a knower of an existing face).
+- `scripts/placeholders.js` – 24 placeholder looks (`assets/placeholders/<id>.svg`, game-icons.net CC BY 3.0); a face
+  stores the path as `img`. `canPickPlaceholder`: GM always, the face's editor while it has no real portrait. Picker in
+  the "someone you met" dialog and the sheet's portrait tools (`pickPlaceholder`). Labels in `DXFF.Roles.*`.
+- Combat: `combatBlocks()` (util) = a player while any combat has started. `createFace`, `addKnower` and
+  `shareWithParty` throw `InCombat` for them, `canAddFaces`/`canShareFace` are false, and the token / selection menus
+  show an "In combat" item instead of Add. `mayAddFaces` is the permission without the combat check. The tab header
+  re-renders on combat start/end (`onCombatChange` in main.js).
+- `scripts/nameplates.js` – responsible GM: every token (all scenes + the prototype token) of an NPC whose face has no
+  `knownBy` gets `displayName: HOVER` unless it already shows to everyone (HOVER/ALWAYS); matched by `face.actor`, NPC
+  actor name or NPC token name. Debounced sync on shared-store face changes and at ready; `preCreateToken` for new
+  tokens. Never lowers a display mode. Setting `knownNameplates`.
 - `scripts/npcs.js` – NPC tokens and actors: the players' right-click menu on NPC tokens (capture-phase `contextmenu`
   on `window`, registered at **ready**, only on `#board`, ignores right-drags), the GM's token HUD button
   (`renderTokenHUD`) and the Actors directory item (`getActorContextOptions`). NPC = actor without a player owner.

@@ -4,6 +4,7 @@ import { FacesTab, GROUP_MODES, SORT_MODES } from "./apps/faces-tab.js";
 import { FaceSheet } from "./apps/face-sheet.js";
 import { registerContextMenus, registerPointerMenus, addFaceDialog, bindImageDialog } from "./capture.js";
 import { registerNpcHooks, registerTokenMenu, addNpcForMe, addNpcForAll, npcFromToken, npcFromActor } from "./npcs.js";
+import { registerNameplateHooks, requestNameplateSync, syncNameplates } from "./nameplates.js";
 
 /* -------------------------------------------- */
 /*  Settings and the sidebar tab                */
@@ -40,6 +41,12 @@ function registerSettings() {
     name: "DXFF.Settings.TokenMenu.Name",
     hint: "DXFF.Settings.TokenMenu.Hint",
     scope: "client", config: true, type: Boolean, default: true
+  });
+  game.settings.register(MODULE_ID, "knownNameplates", {
+    name: "DXFF.Settings.KnownNameplates.Name",
+    hint: "DXFF.Settings.KnownNameplates.Hint",
+    scope: "world", config: true, type: Boolean, default: true,
+    onChange: value => { if (value) requestNameplateSync(); }
   });
   game.settings.register(MODULE_ID, "groupBy", {
     scope: "client", config: false, type: String, default: "none",
@@ -89,9 +96,17 @@ function notifyChange(event, userId) {
   if (event.type === "created") {
     if (!face.knownBy) ui.notifications.info(t("NotifyCreated", { name }));
   } else if (event.type === "known") {
-    // The GM shared a face some players knew with the whole party: new for everyone who didn't have it.
+    // A face some players knew was shared with the whole party: new for everyone who didn't have it. When a player
+    // shared it, the GM hears about it too, and everyone is told who it was.
+    if (face.knownBy) return;
     const before = Array.isArray(event.before) ? event.before : [];
-    if (!game.user.isGM && !face.knownBy && !before.includes(game.user.id)) ui.notifications.info(t("NotifyCreated", { name }));
+    const sharer = game.users.get(event.sharedBy);
+    const byPlayer = !!sharer && !sharer.isGM;
+    if (game.user.isGM) {
+      if (byPlayer) ui.notifications.info(t("NotifySharedBy", { name, by: escapeHTML(sharer.name) }));
+    } else if (!before.includes(game.user.id)) {
+      ui.notifications.info(byPlayer ? t("NotifySharedBy", { name, by: escapeHTML(sharer.name) }) : t("NotifyCreated", { name }));
+    }
   } else if (event.type === "image") ui.notifications.info(t("NotifyPortrait", { name }));
   else if (event.type === "note") {
     // Only tell the players the note was meant for.
@@ -109,6 +124,7 @@ Hooks.once("init", () => {
   registerSidebarTab();
   registerContextMenus();
   registerNpcHooks();
+  registerNameplateHooks();
   foundry.applications.handlebars.loadTemplates([`${TEMPLATE_PATH}/visibility.hbs`]);
 });
 
@@ -118,6 +134,7 @@ Hooks.once("ready", async () => {
     registerTokenMenu();
     await store.ensureStores();
     refreshAll();
+    requestNameplateSync();
     game.modules.get(MODULE_ID).api = {
       open: () => ui.familiarfaces?.activate(),
       openFace: id => FaceSheet.open(id),
@@ -139,7 +156,8 @@ Hooks.once("ready", async () => {
       setImage: store.setImage,
       deleteFace: store.deleteFace,
       notes: store.notesFor,
-      addNote: store.addNote
+      addNote: store.addNote,
+      syncNameplates
     };
   } catch (err) {
     console.error(`${MODULE_ID} | ready`, err);
@@ -180,6 +198,20 @@ Hooks.on("renderJournalDirectory", (app, html) => {
   } catch (err) {
     console.error(`${MODULE_ID} | renderJournalDirectory`, err);
   }
+});
+
+// Combat starting or ending turns adding and sharing off and on for players (header: the Add face button).
+function onCombatChange() {
+  if (game.user.isGM) return;
+  for (const app of [ui.familiarfaces, ui.familiarfaces?.popout]) {
+    if (app?.rendered) app.render({ parts: ["header", "filters", "list", "footer"] });
+  }
+  FaceSheet.refreshAll();
+}
+Hooks.on("combatStart", onCombatChange);
+Hooks.on("deleteCombat", onCombatChange);
+Hooks.on("updateCombat", (combat, changes) => {
+  if ("round" in changes || "active" in changes) onCombatChange();
 });
 
 // User names and colours show on notes.

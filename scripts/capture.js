@@ -1,11 +1,12 @@
 import {
   MODULE_ID, QUEST_LOG_ID, t, escapeHTML, cleanLine, cleanName, imagesIn, imagesInPage, currentSceneName, placeSuggestions,
-  canAddFaces, nameHue, initials, randomId
+  canAddFaces, mayAddFaces, combatBlocks, nameHue, initials, randomId
 } from "./util.js";
 import * as store from "./store.js";
 import { FaceSheet } from "./apps/face-sheet.js";
 import { tokenize } from "./search.js";
 import { showImage } from "./images.js";
+import { hasRealPortrait } from "./placeholders.js";
 
 const { DialogV2 } = foundry.applications.api;
 const MAX_NAME = 80;
@@ -34,7 +35,7 @@ export async function addFaceDialog({ name = "", img = "", images = [], metAt, i
     return null;
   }
   if (!canAddFaces()) {
-    ui.notifications.warn(t("CannotAdd"));
+    ui.notifications.warn(t(combatBlocks() ? "InCombat" : "CannotAdd"));
     return null;
   }
   name = cleanName(name);
@@ -172,7 +173,7 @@ export async function bindImageDialog(src, { hint = "", name = "", source = null
         <input type="radio" name="faceId" value="${f.id}" ${f.id === guess?.id ? "checked" : ""}>
         <span class="dxff-avatar" style="--hue: ${nameHue(f.name)}">${f.img ? `<img src="${escapeHTML(f.img)}" alt="">` : `<span>${escapeHTML(initials(f.name))}</span>`}</span>
         <span class="dxff-bind-name">${escapeHTML(f.name)}${f.metAt ? `<small><i class="fa-solid fa-location-dot" inert></i> ${escapeHTML(f.metAt)}</small>` : ""}</span>
-        ${f.img ? `<i class="fa-solid fa-image dxff-has-portrait" data-tooltip="${escapeHTML(t("HasPortrait"))}"></i>` : ""}
+        ${hasRealPortrait(f.img) ? `<i class="fa-solid fa-image dxff-has-portrait" data-tooltip="${escapeHTML(t("HasPortrait"))}"></i>` : ""}
       </label>
     </li>`).join("");
 
@@ -409,6 +410,10 @@ function selectionItems(found) {
   const items = [];
   const existing = store.findByName(found.name);
   if (existing) items.push({ icon: "fa-solid fa-address-card", label: t("Ctx.OpenFace", { name: existing.name }), run: () => FaceSheet.open(existing.id) });
+  if (combatBlocks()) {
+    items.push({ icon: "fa-solid fa-swords", label: t("Ctx.InCombat"), run: () => ui.notifications.info(t("InCombat")) });
+    return items;
+  }
   items.push({
     icon: "fa-solid fa-user-plus",
     label: t(existing ? "Ctx.AddNameAgain" : "Ctx.AddName", { name: found.name }),
@@ -418,7 +423,7 @@ function selectionItems(found) {
 }
 
 function selectionMenuAllowed() {
-  return game.ready && store.ready() && canAddFaces() && game.settings.get(MODULE_ID, "selectionMenu");
+  return game.ready && store.ready() && mayAddFaces() && game.settings.get(MODULE_ID, "selectionMenu");
 }
 
 function onSelectionContextMenu(event) {
