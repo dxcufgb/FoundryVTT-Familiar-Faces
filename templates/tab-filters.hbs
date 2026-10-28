@@ -1,0 +1,17 @@
+<div class="dxff-filters">
+  <label class="dxff-select">
+    <i class="fa-solid fa-layer-group" inert></i>
+    <select name="groupBy" aria-label="{{localize "DXFF.GroupByLabel"}}">
+      {{selectOptions groupOptions selected=groupBy}}
+    </select>
+  </label>
+  <label class="dxff-select">
+    <i class="fa-solid fa-arrow-down-wide-short" inert></i>
+    <select name="sortBy" aria-label="{{localize "DXFF.SortByLabel"}}">
+      {{selectOptions sortOptions selected=sortBy}}
+    </select>
+  </label>
+  <span class="dxff-total" data-tooltip="DXFF.CountHint">
+    {{#if searching}}{{shown}}/{{/if}}{{total}} <i class="fa-solid fa-masks-theater" inert></i>
+  </span>
+</div>

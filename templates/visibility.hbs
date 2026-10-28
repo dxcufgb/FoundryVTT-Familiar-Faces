@@ -1,0 +1,21 @@
+<div class="dxff-visibility">
+  <div class="dxff-seg" role="group" aria-label="{{localize "DXFF.WhoSees"}}">
+    {{#each options}}
+    <button type="button" class="{{#if active}}active{{/if}}" data-action="setVisibility" data-scope="{{../scope}}" data-vis="{{id}}"
+            data-tooltip="{{hint}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" {{#if disabled}}disabled{{/if}}>
+      <i class="{{icon}}" inert></i> {{label}}
+    </button>
+    {{/each}}
+  </div>
+  {{#if showPlayers}}
+  <div class="dxff-share-players">
+    {{#each players}}
+    <label class="dxff-share-player" style="--user-color: {{color}}">
+      <input type="checkbox" data-share="{{../scope}}" value="{{id}}" {{checked checked}}>
+      <i class="fa-solid fa-check" inert></i>
+      <span>{{name}}</span>
+    </label>
+    {{/each}}
+  </div>
+  {{/if}}
+</div>

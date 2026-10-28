@@ -1,0 +1,186 @@
+{
+  "DXFF": {
+    "Title": "Familiar Faces",
+    "Search": "Search familiar faces",
+    "SearchPlaceholder": "Search names, places, notes…",
+    "SearchFaces": "Search familiar faces…",
+    "ClearSearch": "Clear search",
+    "NoMatches": "No familiar faces match.",
+    "EmptyGM": "Nobody here yet. Select a name in a journal and right-click it to add them.",
+    "EmptyPlayer": "Nobody here yet. The people your party meets will show up here.",
+    "NotReady": "Familiar Faces is not set up yet. A GM needs to log in once with the module enabled.",
+    "PrivateNotReady": "Your private notebook is created the next time a GM logs in. Until then you can share notes with the party.",
+    "CountHint": "Familiar faces",
+    "GroupByLabel": "Group by",
+    "SortByLabel": "Sort by",
+    "GroupBy": {
+      "none": "No grouping",
+      "place": "Place met"
+    },
+    "SortBy": {
+      "name": "Name",
+      "recent": "Recently updated"
+    },
+    "UnknownPlace": "Place unknown",
+    "FilterPlace": "Show everyone met here",
+    "NoteCountHint": "Notes you can see: {mine} yours, {others} from others",
+
+    "AddFace": "Add face",
+    "AddFaceHint": "Add someone the party has met",
+    "Add": "Add",
+    "Added": "{name} was added to Familiar Faces.",
+    "AddedOn": "Added",
+    "AlreadyExists": "{name} is already in Familiar Faces.",
+    "CannotAdd": "Only the GM can add new faces.",
+    "NameRequired": "A name is needed.",
+    "Unnamed": "Unnamed",
+    "From": "From",
+    "LinkSource": "Link to where they were found",
+    "Open": "Open",
+    "Cancel": "Cancel",
+    "Save": "Save",
+    "Edit": "Edit",
+
+    "Field": {
+      "Name": "Name",
+      "MetAt": "First met at",
+      "Info": "What the party knows",
+      "Place": "Where they were",
+      "Note": "Note"
+    },
+    "Placeholder": {
+      "MetAt": "A place, a scene…",
+      "Info": "A short description everyone can see (optional)",
+      "Place": "Where were they when you met them?",
+      "Note": "Your notes about them…"
+    },
+    "InfoHint": "Shown to every player. Links such as @UUID[…] work.",
+    "UseScene": "Use the current scene ({scene})",
+    "Source": "Found in",
+    "SourceGone": "The journal this face came from no longer exists.",
+
+    "Portrait": "Portrait",
+    "NoPortrait": "No portrait",
+    "PortraitDropHint": "Drop an image, an actor or a journal image page here to use it as the portrait",
+    "BrowsePortrait": "Pick a portrait from the files",
+    "UploadPortrait": "Upload a portrait",
+    "ChangePortrait": "Change portrait…",
+    "ShowPortrait": "Show portrait to players",
+    "RemovePortrait": "Remove portrait",
+    "PortraitSet": "{name} now has this portrait.",
+    "PortraitShown": "The portrait of {name} was shown to the players.",
+    "ShareFailed": "The portrait could not be shown to the players.",
+    "NoImageInDrop": "There is no image in what was dropped.",
+    "HasPortrait": "Has a portrait (it will be replaced)",
+
+    "BindImage": "Add image to NPC",
+    "BindButton": "Use as portrait",
+    "BindHint": "Pick who this is. Double-click a name to use the image right away.",
+    "NewFaceWithImage": "New face with this image",
+    "NoFacesYet": "There are no familiar faces yet; add one with this image.",
+    "PickFace": "Pick someone first.",
+
+    "DeleteFace": "Remove",
+    "DeleteFaceConfirm": "Remove <b>{name}</b> from Familiar Faces? Everyone's notes about them are removed too.",
+    "FaceGone": "This face has been removed from Familiar Faces.",
+    "ForgetFace": "Remove from my faces",
+    "ForgetFaceConfirm": "Remove <b>{name}</b> from your Familiar Faces? The other players who added them keep them, and your private notes are kept in case you add them again.",
+    "ForgetFaceConfirmLast": "Remove <b>{name}</b> from your Familiar Faces? Nobody else has added them, so they are removed. Your private notes are kept in case you add them again.",
+    "ShareWithParty": "Share with all players",
+    "ShareWithPartyHint": "Put them in every player's Familiar Faces",
+    "SharedWithParty": "{name} is now in every player's Familiar Faces.",
+    "AddedForMe": "{name} was added to your Familiar Faces.",
+    "KnownByLabel": "Only known by",
+    "KnownBy": "Only in the Familiar Faces of: {names}",
+    "You": "you",
+
+    "Notes": "Notes",
+    "NoteFilterLabel": "Show notes",
+    "NoteFilter": {
+      "all": "All",
+      "mine": "Mine",
+      "others": "Others'"
+    },
+    "AddNote": "Add note",
+    "EditNote": "Edit note",
+    "DeleteNote": "Delete note",
+    "DeleteNoteConfirm": "Delete this note?",
+    "NoteEmpty": "Write a note or a place first.",
+    "NoteGone": "This note no longer exists.",
+    "NotYourNote": "Only the author can change this note.",
+    "NoNotes": "No notes yet. What do you remember about them?",
+    "NoNotesInFilter": "No notes here.",
+    "EditedAt": "Edited {date}",
+    "CtrlEnter": "Ctrl+Enter to add",
+    "CtrlEnterSave": "Ctrl+Enter to save, Esc to cancel",
+    "GMSeesShared": "The GM can read every note. Other players never see your “Only me” notes in Familiar Faces.",
+    "PickPlayers": "Pick at least one player to share with.",
+
+    "WhoSees": "Who can read this note",
+    "Vis": {
+      "private": "Only me",
+      "everyone": "Party",
+      "some": "Some players",
+      "privateHint": "Only you can read this note",
+      "everyoneHint": "Every player can read this note",
+      "someHint": "Only the players you pick can read this note",
+      "privateShort": "Only you",
+      "everyoneShort": "Party",
+      "someShort": "Shared with {names}"
+    },
+
+    "UnknownUser": "Someone",
+    "StoreShared": "Familiar Faces (shared)",
+    "StorePrivate": "Familiar Faces – {name}'s notes",
+
+    "NotifyCreated": "New familiar face: <b>{name}</b>",
+    "NotifyPortrait": "<b>{name}</b> has a new portrait.",
+    "NotifyNote": "{by} shared a note about <b>{name}</b>.",
+
+    "NotAnImage": "That file is not an image.",
+    "NoUploadPermission": "You don't have permission to upload files.",
+    "UploadFailed": "The upload failed.",
+    "UploadError": "Could not upload {name}: {error}",
+
+    "Ctx": {
+      "AddName": "Add “{name}” to Familiar Faces",
+      "AddNameAgain": "Add another “{name}”",
+      "OpenFace": "Open {name}",
+      "AddEntry": "Add to Familiar Faces",
+      "AddPage": "Add to Familiar Faces",
+      "BindImage": "Add image to NPC…",
+      "NewFaceWithImage": "New face with this image…",
+      "ViewImage": "View image",
+      "AddNpcForMe": "Add {name} to my Familiar Faces",
+      "AddNpcForAll": "Add {name} to Familiar Faces for all players",
+      "AddActor": "Add to Familiar Faces"
+    },
+
+    "Settings": {
+      "Notify": {
+        "Name": "Notifications",
+        "Hint": "Tell players when someone new is added, gets a portrait, or a note is shared with them."
+      },
+      "PlayersCanAdd": {
+        "Name": "Players can add faces",
+        "Hint": "Let players add people to Familiar Faces themselves (Add face button and right-click on a selected name). Portraits stay GM-only."
+      },
+      "ImageFolder": {
+        "Name": "Portrait upload folder",
+        "Hint": "Where uploaded portraits are saved. Empty: worlds/<world>/familiar-faces."
+      },
+      "SelectionMenu": {
+        "Name": "Right-click selected names",
+        "Hint": "Right-clicking a selected name in a journal offers to add it to Familiar Faces. Hold Shift for the normal menu."
+      },
+      "ImageMenu": {
+        "Name": "Right-click journal images (GM)",
+        "Hint": "Right-clicking an image in a journal offers to use it as the portrait of a familiar face. Hold Shift for the normal menu."
+      },
+      "TokenMenu": {
+        "Name": "Right-click NPC tokens",
+        "Hint": "Players: right-clicking an NPC's token offers to add them to your own Familiar Faces (hold Shift to skip it). GM: a Familiar Faces button on NPC token HUDs adds them for all players."
+      }
+    }
+  }
+}

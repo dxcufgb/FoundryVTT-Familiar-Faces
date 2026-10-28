@@ -1,0 +1,732 @@
+/* ==========================================================================
+   Dxcufgb's Familiar Faces
+   ========================================================================== */
+
+/* ---------- Theme tokens (dark default, light override) ---------- */
+.dxff {
+  --dxff-text: var(--color-text-primary, #e7d1b1);
+  --dxff-strong: var(--color-text-emphatic, #f7f3e8);
+  --dxff-muted: var(--color-text-subtle, #9f8475);
+  --dxff-surface: rgba(255, 255, 255, 0.035);
+  --dxff-surface-2: rgba(255, 255, 255, 0.07);
+  --dxff-hover: rgba(255, 255, 255, 0.08);
+  --dxff-border: rgba(255, 255, 255, 0.12);
+  --dxff-border-strong: rgba(255, 255, 255, 0.22);
+  --dxff-accent: #6cc3b5;
+  --dxff-accent-soft: rgba(108, 195, 181, 0.15);
+  --dxff-on-accent: #0b1f1c;
+  --dxff-danger: #e0625d;
+  --dxff-warn: #e3a94f;
+  --dxff-private: #c9a0ff;
+  --dxff-mark: rgba(238, 155, 58, 0.45);
+  --dxff-avatar-l: 30%;
+  --dxff-avatar-fg-l: 85%;
+  --dxff-radius: 6px;
+  --dxff-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.theme-light .dxff,
+.dxff.theme-light,
+.themed.theme-light .dxff,
+.dxff.themed.theme-light {
+  --dxff-text: var(--color-text-primary, #2b2116);
+  --dxff-strong: var(--color-text-emphatic, #111);
+  --dxff-muted: var(--color-text-subtle, #6b5a4a);
+  --dxff-surface: rgba(0, 0, 0, 0.035);
+  --dxff-surface-2: rgba(0, 0, 0, 0.065);
+  --dxff-hover: rgba(0, 0, 0, 0.07);
+  --dxff-border: rgba(0, 0, 0, 0.14);
+  --dxff-border-strong: rgba(0, 0, 0, 0.26);
+  --dxff-accent: #1f7a6c;
+  --dxff-accent-soft: rgba(31, 122, 108, 0.12);
+  --dxff-on-accent: #f1fffc;
+  --dxff-danger: #b8332e;
+  --dxff-warn: #a5641a;
+  --dxff-private: #7442b8;
+  --dxff-mark: rgba(255, 196, 0, 0.5);
+  --dxff-avatar-l: 82%;
+  --dxff-avatar-fg-l: 28%;
+  --dxff-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+}
+
+/* A dark window inside a light interface (or the reverse) follows the window. */
+.themed.theme-dark .dxff,
+.dxff.themed.theme-dark {
+  --dxff-text: var(--color-text-primary, #e7d1b1);
+  --dxff-strong: var(--color-text-emphatic, #f7f3e8);
+  --dxff-muted: var(--color-text-subtle, #9f8475);
+  --dxff-surface: rgba(255, 255, 255, 0.035);
+  --dxff-surface-2: rgba(255, 255, 255, 0.07);
+  --dxff-hover: rgba(255, 255, 255, 0.08);
+  --dxff-border: rgba(255, 255, 255, 0.12);
+  --dxff-border-strong: rgba(255, 255, 255, 0.22);
+  --dxff-accent: #6cc3b5;
+  --dxff-accent-soft: rgba(108, 195, 181, 0.15);
+  --dxff-on-accent: #0b1f1c;
+  --dxff-danger: #e0625d;
+  --dxff-warn: #e3a94f;
+  --dxff-private: #c9a0ff;
+  --dxff-mark: rgba(238, 155, 58, 0.45);
+  --dxff-avatar-l: 30%;
+  --dxff-avatar-fg-l: 85%;
+  --dxff-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Shared bits ---------- */
+.dxff mark {
+  background: var(--dxff-mark);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.dxff .dxff-hint {
+  color: var(--dxff-muted);
+  font-size: var(--font-size-11, 0.6875rem);
+  margin: 2px 0 0;
+}
+.dxff .dxff-warn { color: var(--dxff-warn); }
+
+.dxff .dxff-count {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--dxff-surface-2);
+  color: var(--dxff-muted);
+  font-size: var(--font-size-11, 0.6875rem);
+  line-height: 1.5;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Reset Foundry's default button look for the small controls. */
+.dxff :is(.dxff-icon-btn, .dxff-group-header, .dxff-place, .dxff-pills button, .dxff-seg button) {
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  box-shadow: none;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.dxff .dxff-icon-btn {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--dxff-radius);
+  background: transparent;
+  color: var(--dxff-muted);
+  font-size: 12px;
+}
+.dxff .dxff-icon-btn:hover:not(:disabled) { background: var(--dxff-hover); color: var(--dxff-strong); border-color: var(--dxff-border); }
+.dxff .dxff-icon-btn.dxff-danger:hover,
+.dxff button.dxff-danger:hover { color: var(--dxff-danger); }
+
+.dxff button.dxff-primary {
+  background: var(--dxff-accent);
+  color: var(--dxff-on-accent);
+  border-color: transparent;
+  font-weight: 600;
+}
+.dxff button.dxff-primary:hover { filter: brightness(1.08); }
+
+/* Round avatar: a portrait, or initials on a colour from the name. */
+.dxff .dxff-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: hsl(var(--hue, 200) 35% var(--dxff-avatar-l));
+  color: hsl(var(--hue, 200) 40% var(--dxff-avatar-fg-l));
+  border: 1px solid var(--dxff-border-strong);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+}
+.dxff .dxff-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  border: 0;
+}
+
+.dxff .dxff-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.dxff .dxff-search > i {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dxff-muted);
+  font-size: 11px;
+  pointer-events: none;
+}
+.dxff .dxff-search input { width: 100%; padding-left: 26px; }
+
+.dxff .dxff-drop-hover {
+  outline: 2px dashed var(--dxff-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Sidebar tab ---------- */
+.dxff-tab {
+  color: var(--dxff-text);
+  overflow: hidden;
+}
+
+.dxff-tab .dxff-tab-header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 8px 4px;
+  flex: none;
+}
+.dxff-tab .dxff-add-face {
+  flex: none;
+  width: auto;
+  white-space: nowrap;
+  padding: 0 10px;
+}
+
+.dxff-tab .dxff-filters {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 8px 6px;
+  flex: none;
+  border-bottom: 1px solid var(--dxff-border);
+}
+.dxff-tab .dxff-select {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  color: var(--dxff-muted);
+  font-size: 11px;
+}
+.dxff-tab .dxff-select select { flex: 1; min-width: 0; height: 24px; font-size: var(--font-size-12, 0.75rem); }
+.dxff-tab .dxff-total {
+  flex: none;
+  color: var(--dxff-muted);
+  font-size: var(--font-size-12, 0.75rem);
+  white-space: nowrap;
+}
+
+.dxff-tab .dxff-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 6px 12px;
+}
+
+.dxff-tab .dxff-group + .dxff-group { margin-top: 6px; }
+.dxff-tab .dxff-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: var(--dxff-radius);
+  background: var(--dxff-surface-2);
+  color: var(--dxff-strong);
+  font-weight: 600;
+  font-size: var(--font-size-13, 0.8125rem);
+  text-align: left;
+}
+.dxff-tab .dxff-group-header:hover { background: var(--dxff-hover); }
+.dxff-tab .dxff-group-icon { color: var(--dxff-accent); font-size: 11px; }
+.dxff-tab .dxff-group-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dxff-tab .dxff-group-label.unknown { color: var(--dxff-muted); font-style: italic; }
+.dxff-tab .dxff-caret { font-size: 9px; color: var(--dxff-muted); transition: transform 0.15s; }
+.dxff-tab .dxff-group.collapsed .dxff-caret { transform: rotate(-90deg); }
+.dxff-tab .dxff-group.collapsed .dxff-faces { display: none; }
+
+.dxff-tab .dxff-faces {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dxff-tab .dxff-face {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 7px;
+  border: 1px solid var(--dxff-border);
+  border-radius: var(--dxff-radius);
+  background: var(--dxff-surface);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.dxff-tab .dxff-face:hover,
+.dxff-tab .dxff-face:focus-visible {
+  background: var(--dxff-hover);
+  border-color: var(--dxff-border-strong);
+  outline: none;
+}
+.dxff-tab .dxff-face-body { flex: 1; min-width: 0; }
+.dxff-tab .dxff-face-name {
+  color: var(--dxff-strong);
+  font-weight: 600;
+  font-size: var(--font-size-14, 0.875rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dxff-tab .dxff-places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+}
+.dxff .dxff-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 1px 6px;
+  border: 1px solid var(--dxff-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dxff-muted);
+  font-size: var(--font-size-11, 0.6875rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dxff .dxff-place:hover { color: var(--dxff-strong); border-color: var(--dxff-accent); }
+.dxff .dxff-place i { color: var(--dxff-accent); font-size: 9px; }
+.dxff-tab .dxff-snippet {
+  margin-top: 3px;
+  color: var(--dxff-muted);
+  font-size: var(--font-size-11, 0.6875rem);
+  line-height: 1.35;
+}
+.dxff-tab .dxff-note-count {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dxff-muted);
+  font-size: var(--font-size-11, 0.6875rem);
+}
+
+.dxff .dxff-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 12px;
+  color: var(--dxff-muted);
+  text-align: center;
+}
+.dxff .dxff-empty > i { font-size: 28px; opacity: 0.6; }
+.dxff .dxff-empty p { margin: 0; }
+.dxff .dxff-empty button { width: auto; }
+
+/* ---------- Face sheet ---------- */
+.dxff-sheet .window-content { padding: 0; }
+.dxff-sheet .dxff-sheet-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: 12px 14px 16px;
+  color: var(--dxff-text);
+}
+
+.dxff-sheet .dxff-profile {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.dxff-sheet .dxff-portrait {
+  position: relative;
+  flex: none;
+  width: 150px;
+  aspect-ratio: 4 / 5;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--dxff-border-strong);
+  background: hsl(var(--hue, 200) 30% var(--dxff-avatar-l));
+  box-shadow: var(--dxff-shadow);
+}
+.dxff-sheet .dxff-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  border: 0;
+  cursor: zoom-in;
+}
+.dxff-sheet .dxff-portrait-initials {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 44px;
+  font-weight: 700;
+  color: hsl(var(--hue, 200) 40% var(--dxff-avatar-fg-l));
+  letter-spacing: 0.04em;
+}
+.dxff-sheet .dxff-portrait-tools {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.dxff-sheet .dxff-portrait:hover .dxff-portrait-tools,
+.dxff-sheet .dxff-portrait:focus-within .dxff-portrait-tools,
+.dxff-sheet .dxff-portrait.empty .dxff-portrait-tools { opacity: 1; }
+.dxff-sheet .dxff-portrait-tools .dxff-icon-btn { color: #f3ece0; }
+.dxff-sheet .dxff-portrait-tools .dxff-icon-btn:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+
+.dxff-sheet .dxff-profile-body { flex: 1; min-width: 0; }
+.dxff-sheet .dxff-name {
+  margin: 0 0 6px;
+  border: 0;
+  color: var(--dxff-strong);
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+.dxff-sheet .dxff-facts { margin: 0 0 8px; display: grid; gap: 3px; }
+.dxff-sheet .dxff-facts > div { display: flex; gap: 8px; font-size: var(--font-size-13, 0.8125rem); }
+.dxff-sheet .dxff-facts dt { flex: none; width: 108px; color: var(--dxff-muted); }
+.dxff-sheet .dxff-facts dt i { width: 14px; color: var(--dxff-accent); text-align: center; }
+.dxff-sheet .dxff-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.dxff-sheet .dxff-info {
+  padding: 8px 10px;
+  border-left: 3px solid var(--dxff-accent);
+  border-radius: 0 var(--dxff-radius) var(--dxff-radius) 0;
+  background: var(--dxff-surface);
+  font-size: var(--font-size-13, 0.8125rem);
+  line-height: 1.45;
+}
+.dxff-sheet .dxff-profile-actions { display: flex; gap: 6px; margin-top: 10px; }
+.dxff-sheet .dxff-profile-actions button { width: auto; flex: none; padding: 0 10px; height: 28px; }
+
+.dxff-sheet .dxff-face-edit .form-group { margin: 0 0 8px; }
+.dxff-sheet .dxff-face-edit label { font-weight: 600; font-size: var(--font-size-12, 0.75rem); color: var(--dxff-muted); }
+.dxff-sheet .dxff-face-edit textarea { min-height: 80px; resize: vertical; }
+
+.dxff .dxff-with-btn { display: flex; gap: 4px; align-items: center; }
+.dxff .dxff-with-btn input { flex: 1; min-width: 0; }
+
+.dxff .dxff-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+.dxff .dxff-form-footer .dxff-hint { margin: 0 auto 0 0; }
+.dxff .dxff-form-footer button { width: auto; flex: none; padding: 0 12px; height: 28px; }
+
+/* Notes */
+.dxff-sheet .dxff-notes { margin-top: 16px; }
+.dxff-sheet .dxff-notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--dxff-border);
+  padding-bottom: 5px;
+  margin-bottom: 8px;
+}
+.dxff-sheet .dxff-notes-header h3 { margin: 0; border: 0; font-size: 1.05rem; color: var(--dxff-strong); }
+.dxff-sheet .dxff-notes-header h3 i { color: var(--dxff-accent); font-size: 0.85em; }
+
+.dxff .dxff-pills { display: flex; gap: 3px; }
+.dxff .dxff-pills button {
+  padding: 2px 8px;
+  border: 1px solid var(--dxff-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dxff-muted);
+  font-size: var(--font-size-12, 0.75rem);
+}
+.dxff .dxff-pills button:hover { color: var(--dxff-strong); background: var(--dxff-hover); }
+.dxff .dxff-pills button.active { color: var(--dxff-strong); border-color: var(--dxff-accent); background: var(--dxff-accent-soft); }
+
+.dxff-sheet .dxff-composer,
+.dxff-sheet .dxff-note-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--dxff-border);
+  border-radius: var(--dxff-radius);
+  background: var(--dxff-surface);
+}
+.dxff-sheet .dxff-note-edit { border: 0; padding: 0; background: transparent; }
+.dxff-sheet .dxff-composer textarea,
+.dxff-sheet .dxff-note-edit textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+.dxff .dxff-place-input > i { color: var(--dxff-accent); width: 14px; text-align: center; font-size: 12px; }
+
+.dxff .dxff-visibility { display: flex; flex-direction: column; gap: 5px; }
+.dxff .dxff-seg {
+  display: flex;
+  border: 1px solid var(--dxff-border);
+  border-radius: var(--dxff-radius);
+  overflow: hidden;
+}
+.dxff .dxff-seg button {
+  flex: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--dxff-muted);
+  font-size: var(--font-size-12, 0.75rem);
+  white-space: nowrap;
+}
+.dxff .dxff-seg button + button { border-left: 1px solid var(--dxff-border); }
+.dxff .dxff-seg button:hover:not(:disabled) { background: var(--dxff-hover); color: var(--dxff-strong); }
+.dxff .dxff-seg button.active { background: var(--dxff-accent-soft); color: var(--dxff-strong); font-weight: 600; }
+.dxff .dxff-seg button[data-vis=private].active i { color: var(--dxff-private); }
+.dxff .dxff-seg button.active i { color: var(--dxff-accent); }
+.dxff .dxff-seg button:disabled { opacity: 0.4; cursor: default; }
+
+.dxff .dxff-share-players { display: flex; flex-wrap: wrap; gap: 4px; }
+.dxff .dxff-share-player {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px 1px 3px;
+  border: 1px solid var(--dxff-border);
+  border-left: 3px solid var(--user-color, var(--dxff-border));
+  border-radius: var(--dxff-radius);
+  font-size: var(--font-size-12, 0.75rem);
+  cursor: pointer;
+}
+.dxff .dxff-share-player { position: relative; padding-left: 7px; }
+.dxff .dxff-share-player input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.dxff .dxff-share-player i { display: none; color: var(--dxff-accent); font-size: 10px; }
+.dxff .dxff-share-player:has(input:checked) { background: var(--dxff-accent-soft); color: var(--dxff-strong); border-color: var(--dxff-accent); }
+.dxff .dxff-share-player:has(input:checked) i { display: inline; }
+.dxff .dxff-share-player:has(input:focus-visible) { outline: 2px solid var(--dxff-accent); outline-offset: 1px; }
+
+.dxff-sheet .dxff-note-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dxff-sheet .dxff-note {
+  padding: 7px 9px;
+  border: 1px solid var(--dxff-border);
+  border-left: 3px solid var(--user-color, var(--dxff-border));
+  border-radius: var(--dxff-radius);
+  background: var(--dxff-surface);
+}
+.dxff-sheet .dxff-note.vis-private { background: color-mix(in srgb, var(--dxff-private) 7%, transparent); }
+.dxff-sheet .dxff-note-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-12, 0.75rem);
+  color: var(--dxff-muted);
+}
+.dxff-sheet .dxff-author { color: var(--dxff-strong); font-weight: 600; }
+.dxff-sheet .dxff-vis {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+.dxff-sheet .dxff-vis span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dxff-sheet .vis-private .dxff-vis i { color: var(--dxff-private); }
+.dxff-sheet .dxff-date { margin-left: auto; white-space: nowrap; }
+.dxff-sheet .dxff-note-head .dxff-icon-btn { width: 22px; height: 22px; font-size: 11px; }
+.dxff-sheet .dxff-note-place {
+  margin-top: 3px;
+  font-size: var(--font-size-12, 0.75rem);
+  color: var(--dxff-text);
+}
+.dxff-sheet .dxff-note-place i { color: var(--dxff-accent); font-size: 10px; }
+.dxff-sheet .dxff-note-text {
+  margin-top: 4px;
+  font-size: var(--font-size-13, 0.8125rem);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.dxff-sheet .dxff-no-notes {
+  padding: 14px;
+  color: var(--dxff-muted);
+  font-style: italic;
+  text-align: center;
+}
+.dxff-sheet .dxff-footnote { margin-top: 10px; }
+
+/* ---------- Dialogs ---------- */
+.dxff-dialog .dxff-add-face .form-group { margin: 0 0 8px; }
+.dxff-dialog .dxff-source-line {
+  margin: 0 0 8px;
+  color: var(--dxff-muted);
+  font-size: var(--font-size-12, 0.75rem);
+}
+.dxff-dialog .dxff-dup-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -2px 0 8px;
+  padding: 4px 8px;
+  border-radius: var(--dxff-radius);
+  background: color-mix(in srgb, var(--dxff-warn) 14%, transparent);
+  color: var(--dxff-warn);
+  font-size: var(--font-size-12, 0.75rem);
+}
+.dxff-dialog .dxff-dup-warning[hidden] { display: none; }
+.dxff-dialog .dxff-dup-warning span { flex: 1; }
+.dxff-dialog .dxff-dup-warning button { width: auto; flex: none; height: 24px; padding: 0 8px; font-size: var(--font-size-12, 0.75rem); }
+
+.dxff-dialog .dxff-pick-images {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 6px 8px 8px;
+  border: 1px solid var(--dxff-border);
+  border-radius: var(--dxff-radius);
+}
+.dxff-dialog .dxff-pick-images legend { padding: 0 4px; font-weight: 600; }
+.dxff-dialog .dxff-pick-image {
+  position: relative;
+  width: 64px;
+  height: 80px;
+  border-radius: var(--dxff-radius);
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  background: var(--dxff-surface-2);
+}
+.dxff-dialog .dxff-pick-image input { position: absolute; opacity: 0; pointer-events: none; }
+.dxff-dialog .dxff-pick-image img { width: 100%; height: 100%; object-fit: cover; border: 0; }
+.dxff-dialog .dxff-pick-image span { display: grid; place-items: center; height: 100%; color: var(--dxff-muted); font-size: 20px; }
+.dxff-dialog .dxff-pick-image:has(input:checked) { border-color: var(--dxff-accent); box-shadow: 0 0 0 2px var(--dxff-accent-soft); }
+.dxff-dialog .dxff-pick-image:has(input:focus-visible) { outline: 2px solid var(--dxff-accent); outline-offset: 1px; }
+.dxff-dialog .dxff-checkbox { display: flex; align-items: center; gap: 6px; }
+
+.dxff-dialog .dxff-bind { display: flex; gap: 12px; align-items: stretch; }
+.dxff-dialog .dxff-bind-preview {
+  flex: none;
+  width: 140px;
+  align-self: flex-start;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--dxff-border-strong);
+  box-shadow: var(--dxff-shadow);
+}
+.dxff-dialog .dxff-bind-preview img { display: block; width: 100%; height: auto; max-height: 260px; object-fit: cover; border: 0; }
+.dxff-dialog .dxff-bind-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.dxff-dialog .dxff-bind-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--dxff-border);
+  border-radius: var(--dxff-radius);
+}
+.dxff-dialog .dxff-bind-list li[hidden] { display: none; }
+.dxff-dialog .dxff-bind-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--dxff-radius);
+  cursor: pointer;
+}
+.dxff-dialog .dxff-bind-option:hover { background: var(--dxff-hover); }
+.dxff-dialog .dxff-bind-option:has(input:checked) { background: var(--dxff-accent-soft); outline: 1px solid var(--dxff-accent); }
+.dxff-dialog .dxff-bind-option input { position: absolute; opacity: 0; pointer-events: none; }
+.dxff-dialog .dxff-bind-option:has(input:focus-visible) { outline: 2px solid var(--dxff-accent); }
+.dxff-dialog .dxff-bind-option .dxff-avatar { width: 32px; height: 32px; font-size: 12px; }
+.dxff-dialog .dxff-bind-name { flex: 1; min-width: 0; display: flex; flex-direction: column; font-weight: 600; }
+.dxff-dialog .dxff-bind-name small { font-weight: 400; color: var(--dxff-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dxff-dialog .dxff-has-portrait { color: var(--dxff-muted); }
+.dxff-dialog .dxff-bind-none { margin: 0; color: var(--dxff-muted); font-style: italic; }
+.dxff-dialog .dxff-bind-none[hidden] { display: none; }
+
+/* ---------- Right-click menu ---------- */
+#dxff-context-menu {
+  position: fixed;
+  z-index: calc(var(--z-index-tooltip, 10000) + 1);
+  min-width: 210px;
+  max-width: 320px;
+  padding: 4px;
+  border: 1px solid var(--dxff-border-strong);
+  border-radius: 8px;
+  background: var(--color-cool-5, #1b1d24);
+  color: var(--dxff-text);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  font-size: var(--font-size-13, 0.8125rem);
+}
+body.theme-light #dxff-context-menu { background: #f6f1e7; }
+#dxff-context-menu header {
+  padding: 4px 8px 5px;
+  color: var(--dxff-muted);
+  font-size: var(--font-size-11, 0.6875rem);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--dxff-border);
+  margin-bottom: 3px;
+}
+#dxff-context-menu header i { color: var(--dxff-accent); }
+#dxff-context-menu ol { list-style: none; margin: 0; padding: 0; }
+#dxff-context-menu li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+#dxff-context-menu li:hover,
+#dxff-context-menu li:focus-visible { background: var(--dxff-hover); color: var(--dxff-strong); outline: none; }
+#dxff-context-menu li i { width: 16px; text-align: center; color: var(--dxff-accent); }
+#dxff-context-menu li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Our items added to the bottom of Dxcufgb's Quest log's selection menu look like its own items. */
+#dxql-context-menu li[data-dxff-item] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+#dxql-context-menu li[data-dxff-item] i { width: 16px; text-align: center; color: var(--dxql-muted); }
+#dxql-context-menu li[data-dxff-item]:hover { background: var(--dxql-hover); color: var(--dxql-strong); }
+#dxql-context-menu li[data-dxff-item]:hover i { color: var(--dxql-accent); }
+
+/* A face only some players have in their Familiar Faces. */
+.dxff-tab .dxff-known { margin-left: 6px; font-size: 10px; color: var(--dxff-muted); vertical-align: 1px; }
+
+/* GM: Familiar Faces button on the token HUD of NPCs. */
+#token-hud .dxff-hud.active i { color: var(--color-warm-2, #ee9b3a); }

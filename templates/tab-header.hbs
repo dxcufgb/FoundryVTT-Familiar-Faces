@@ -1,0 +1,12 @@
+<header class="dxff-tab-header">
+  <div class="dxff-search">
+    <i class="fa-solid fa-magnifying-glass" inert></i>
+    <input type="search" name="search" value="{{search}}" placeholder="{{localize "DXFF.SearchPlaceholder"}}"
+           aria-label="{{localize "DXFF.Search"}}" autocomplete="off">
+  </div>
+  {{#if canAdd}}
+  <button type="button" class="dxff-add-face" data-action="addFace" data-tooltip="DXFF.AddFaceHint">
+    <i class="fa-solid fa-user-plus" inert></i> {{localize "DXFF.AddFace"}}
+  </button>
+  {{/if}}
+</header>
