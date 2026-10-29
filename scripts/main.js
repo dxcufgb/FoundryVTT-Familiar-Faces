@@ -194,6 +194,16 @@ function mayPickLook(entry, src) {
   return isPlaceholder(src) || (!src && isPlaceholder(entry.img));
 }
 
+/** A scene uuid the user can view (a player's own place may link the scene they visited). */
+function viewableScene(uuid) {
+  try {
+    const scene = typeof uuid === "string" ? fromUuidSync(uuid) : null;
+    return scene?.documentName === "Scene" && !!scene.testUserPermission?.(game.user, "OBSERVER");
+  } catch {
+    return false;
+  }
+}
+
 function gmOnly(fn) {
   return (...args) => {
     if (!game.user.isGM) {
@@ -220,6 +230,19 @@ function apiCreate(kind) {
       }
       if (!ownList && !mayAddFaces()) {
         refuse("CannotAdd");
+        return null;
+      }
+      // As in their Add windows: a placeholder look, no journal source or actor, and only a scene they can view.
+      if (["source", "actor"].some(key => data?.[key])) {
+        refuse("Api.GMOnly");
+        return null;
+      }
+      if (data?.scene && !viewableScene(data.scene)) {
+        refuse("Api.GMOnly");
+        return null;
+      }
+      if (data?.img && !isPlaceholder(data.img)) {
+        refuse("Api.ImageGMOnly");
         return null;
       }
     }
