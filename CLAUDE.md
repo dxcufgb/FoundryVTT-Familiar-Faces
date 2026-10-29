@@ -2,7 +2,7 @@
 
 FoundryVTT v13 module (id `dxcufgbs-familiar-faces`, the install folder must have the same name; the id stayed when the
 module was renamed from "Familiar Faces" in 1.1, because the stored flags are keyed by it). A right-sidebar tab with three
-lists, **Faces**, **Places** and **Factions** (switch at the top, client setting `activeList`). Faces are the NPCs the party has met: the GM adds them from journals (right-click a selected name, a journal or a page) and
+lists, **NPCs**, **Places** and **Factions** (switch at the top, client setting `activeList`). Faces are the NPCs the party has met: the GM adds them from journals (right-click a selected name, a journal or a page) and
 binds portraits (right-click a journal image → search dialog of existing faces), and adds NPCs for the whole party from
 the Actors directory menu or the token HUD; players add NPCs to their own list by right-clicking a token, and keep notes
 per NPC with the place they met them, each note private, shared with the party or with chosen players. Search and
@@ -41,8 +41,8 @@ System-agnostic. No build step and no npm dependencies.
   bookkeeping only. A player removes such a face from their list with `forgetFace` (the last one removes the face). `shareWithParty` drops `knownBy` (`canShareFace`: the GM, or a player in `knownBy`); shared notes come along, private notes stay in their authors' stores; the `known` event carries `sharedBy` for the notification. `ensureStores` runs on the
   responsible GM only. Visibility of a note = which store it is in + `sharedWith`; `updateNote` moves a note between
   stores (write the new copy first, then delete the old one, same id).
-- `scripts/apps/faces-tab.js` – `FacesTab` (HandlebarsApplicationMixin(AbstractSidebarTab)): parts `tabs` (Faces /
-  Places switch), `header` (search, never re-rendered by data changes), `filters` (group/sort selects, per list:
+- `scripts/apps/faces-tab.js` – `FacesTab` (HandlebarsApplicationMixin(AbstractSidebarTab)): parts `tabs` (NPCs /
+  Places / Factions switch), `header` (search, never re-rendered by data changes), `filters` (group/sort selects, per list:
   `groupBy`/`sortBy`, `placeGroupBy`/`placeSortBy`), `list`, `footer`. One search per list (`FacesTab.searches`).
   Cards carry `data-entry-id` + `data-kind`. Context menu on cards.
 - `scripts/apps/entry-sheet.js` – `EntrySheet`, the base of both sheets: picture (GM tools, drop target), edit form
