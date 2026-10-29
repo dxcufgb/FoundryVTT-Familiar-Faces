@@ -111,6 +111,8 @@ System-agnostic. No build step and no npm dependencies.
   world — so privacy is enforced in the UI only; don't document it as more than that.
 - **Permissions**: portraits and place / faction pictures are GM-only (`setImage`/`setEntryImage` callers check
   `game.user.isGM`); editing/deleting a face or place: `canEditEntry` (GM or its creator); editing a note: its author only; deleting: author, or a GM for shared notes.
+  The module API (`main.js`, "API permission checks") wraps the store calls with the same checks (warn, return
+  null/false, never throw); a new API data call needs its wrapper too, the store functions stay unchecked.
 - **Escaping**: user text is stored plain and rendered through `enrich()` (escapes first) or `highlight()`; any other
   interpolation into HTML (dialogs, notifications, our context menu) must use `escapeHTML`.
 - **One client acts**: `ensureStores` / `ensurePrivateStore` run only where `isResponsibleGM()`.

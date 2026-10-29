@@ -1,4 +1,6 @@
-import { MODULE_ID, QUEST_LOG_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM } from "./util.js";
+import {
+  MODULE_ID, QUEST_LOG_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM, combatBlocks, mayAddFaces
+} from "./util.js";
 import * as store from "./store.js";
 import { FacesTab, MODES, GROUP_MODES, PLACE_GROUP_MODES, FACTION_GROUP_MODES, SORT_MODES } from "./apps/faces-tab.js";
 import { EntrySheet } from "./apps/entry-sheet.js";
@@ -12,6 +14,7 @@ import { registerNpcHooks, registerTokenMenu, addNpcForMe, addNpcForAll, npcFrom
 import { registerPlaceHooks, addPlaceForAll, placeFromScene } from "./places.js";
 import { registerNameplateHooks, requestNameplateSync, syncNameplates } from "./nameplates.js";
 import { linkMentions, questLogTargets } from "./quest-links.js";
+import { canPickPlaceholder, isPlaceholder } from "./placeholders.js";
 
 /* -------------------------------------------- */
 /*  Settings and the sidebar tab                */
@@ -158,6 +161,234 @@ function notifyChange(event, userId) {
 }
 
 /* -------------------------------------------- */
+/*  API permission checks                       */
+/* -------------------------------------------- */
+
+/*
+ * The API checks what the module's own windows check, so a player's macro can't do more than the player could in the
+ * tab. A refusal warns and returns null (creating, adding a note) or false (everything else); it never throws. GMs
+ * may do everything. The store functions themselves stay unchecked for the module's own callers.
+ */
+
+const GONE_TEXT = { faces: "FaceGone", places: "PlaceGone", factions: "FactionGone" };
+/** Fields only a GM may set through update…: the edit form of a player has name, info and metAt/region/category. */
+const GM_FIELDS = ["source", "actor", "scene"];
+
+function refuse(key, data) {
+  ui.notifications.warn(t(key, data));
+}
+
+/** The entry when the user has it in their lists; otherwise warns that it's gone (as the windows do). */
+function visibleEntry(kind, id) {
+  const entry = store.getEntry(kind, id);
+  if (!entry) refuse(GONE_TEXT[kind]);
+  return entry;
+}
+
+const nameOf = entry => ({ name: escapeHTML(entry.name) });
+
+/** A player may set a placeholder look (or clear one) on an entry they may edit while it has no real picture. */
+function mayPickLook(entry, src) {
+  if (game.user.isGM) return true;
+  if (!canPickPlaceholder(entry, store.canEditEntry(entry))) return false;
+  return isPlaceholder(src) || (!src && isPlaceholder(entry.img));
+}
+
+/** A scene uuid the user can view (a player's own place may link the scene they visited). */
+function viewableScene(uuid) {
+  try {
+    const scene = typeof uuid === "string" ? fromUuidSync(uuid) : null;
+    return scene?.documentName === "Scene" && !!scene.testUserPermission?.(game.user, "OBSERVER");
+  } catch {
+    return false;
+  }
+}
+
+function gmOnly(fn) {
+  return (...args) => {
+    if (!game.user.isGM) {
+      refuse("Api.GMOnly");
+      return null;
+    }
+    return fn(...args);
+  };
+}
+
+/** Players add to their own list (knownBy: just them), or for the party when the GM allows it. */
+function apiCreate(kind) {
+  return async (data = {}) => {
+    if (!game.user.isGM) {
+      const knownBy = Array.isArray(data?.knownBy) ? [...new Set(data.knownBy.filter(Boolean))] : [];
+      const ownList = knownBy.length > 0 && knownBy.every(userId => userId === game.user.id);
+      if (kind === "faces" && combatBlocks()) {
+        refuse("InCombat");
+        return null;
+      }
+      if (knownBy.length && !ownList) {
+        refuse("Api.OnlyOwnList");
+        return null;
+      }
+      if (!ownList && !mayAddFaces()) {
+        refuse("CannotAdd");
+        return null;
+      }
+      // As in their Add windows: a placeholder look, no journal source or actor, and only a scene they can view.
+      if (["source", "actor"].some(key => data?.[key])) {
+        refuse("Api.GMOnly");
+        return null;
+      }
+      if (data?.scene && !viewableScene(data.scene)) {
+        refuse("Api.GMOnly");
+        return null;
+      }
+      if (data?.img && !isPlaceholder(data.img)) {
+        refuse("Api.ImageGMOnly");
+        return null;
+      }
+    }
+    return store.createEntry(kind, data);
+  };
+}
+
+/** The GM or the entry's creator; a player only the fields of their edit form, and a picture only as a look. */
+function apiUpdate(kind) {
+  return async (id, changes = {}) => {
+    const entry = visibleEntry(kind, id);
+    if (!entry) return false;
+    if (!store.canEditEntry(entry)) {
+      refuse("Api.CannotEdit", nameOf(entry));
+      return false;
+    }
+    if (!changes || typeof changes !== "object") changes = {};
+    if (!game.user.isGM && GM_FIELDS.some(key => key in changes)) {
+      refuse("Api.GMOnly");
+      return false;
+    }
+    if ("img" in changes && !mayPickLook(entry, changes.img)) {
+      refuse("Api.ImageGMOnly");
+      return false;
+    }
+    await store.updateEntry(kind, id, changes);
+    return true;
+  };
+}
+
+function apiSetImage(kind) {
+  return async (id, src) => {
+    const entry = visibleEntry(kind, id);
+    if (!entry) return false;
+    if (!mayPickLook(entry, src)) {
+      refuse("Api.ImageGMOnly");
+      return false;
+    }
+    await store.setEntryImage(kind, id, src);
+    return true;
+  };
+}
+
+function apiDelete(kind) {
+  return async id => {
+    const entry = visibleEntry(kind, id);
+    if (!entry) return false;
+    if (!store.canDeleteEntry(entry)) {
+      refuse("Api.CannotDelete", nameOf(entry));
+      return false;
+    }
+    await store.deleteEntry(kind, id);
+    return true;
+  };
+}
+
+function apiShare(kind) {
+  return async id => {
+    const entry = store.getEntry(kind, id, { any: game.user.isGM });
+    if (!entry) {
+      refuse(GONE_TEXT[kind]);
+      return false;
+    }
+    if (!entry.knownBy) return false;
+    if (kind === "faces" && combatBlocks()) {
+      refuse("InCombat");
+      return false;
+    }
+    if (!store.canShareEntry(entry)) {
+      refuse("Api.CannotShare", nameOf(entry));
+      return false;
+    }
+    return store.shareEntryWithParty(kind, id);
+  };
+}
+
+function apiForget(kind) {
+  return async id => {
+    const entry = visibleEntry(kind, id);
+    if (!entry) return false;
+    if (!store.canForgetEntry(entry)) {
+      refuse("Api.CannotForget", nameOf(entry));
+      return false;
+    }
+    return store.forgetEntry(kind, id);
+  };
+}
+
+/** Notes only about entries the user has in their lists, as in the windows. */
+function apiAddNote(kind) {
+  return async (id, data) => {
+    if (!visibleEntry(kind, id)) return null;
+    return store.addEntryNote(kind, id, data);
+  };
+}
+
+async function apiLinkFace(placeId, faceId) {
+  const place = visibleEntry("places", placeId);
+  const face = place ? visibleEntry("faces", faceId) : null;
+  if (!place || !face) return false;
+  if (!store.canLink(place, face)) {
+    refuse("Api.CannotLink");
+    return false;
+  }
+  return store.linkFace(placeId, faceId);
+}
+
+async function apiUnlinkFace(placeId, faceId) {
+  const place = visibleEntry("places", placeId);
+  const link = place?.links.find(l => l.faceId === faceId);
+  if (!link) return false;
+  if (!store.canUnlink(place, link)) {
+    refuse("Api.CannotUnlink", nameOf(place));
+    return false;
+  }
+  return store.unlinkFace(placeId, faceId);
+}
+
+async function apiLinkToFaction(factionId, kind, id, role) {
+  kind = store.kindOf(kind);
+  if (kind === "factions") return false;
+  const faction = visibleEntry("factions", factionId);
+  const entry = faction ? visibleEntry(kind, id) : null;
+  if (!faction || !entry) return false;
+  if (!store.canLinkFaction(faction, entry)) {
+    refuse("Api.CannotLink");
+    return false;
+  }
+  return store.linkToFaction(factionId, kind, id, role);
+}
+
+/** Changing a role or removing a faction link: its maker, the faction's editor or a GM. */
+function apiFactionLinkChange(change) {
+  return async (factionId, kind, id, ...rest) => {
+    const faction = visibleEntry("factions", factionId);
+    const link = store.factionLinkOf(faction, kind, id);
+    if (!faction || !link) return false;
+    if (!store.canUnlinkFaction(faction, link)) {
+      refuse("Api.CannotUnlink", nameOf(faction));
+      return false;
+    }
+    return change(factionId, kind, id, ...rest);
+  };
+}
+
+/* -------------------------------------------- */
 /*  Hooks                                       */
 /* -------------------------------------------- */
 
@@ -181,28 +412,30 @@ Hooks.once("ready", async () => {
     await store.ensureStores();
     refreshAll();
     requestNameplateSync();
+    // Every data call checks the user's permissions first (see "API permission checks" above).
     game.modules.get(MODULE_ID).api = {
       open: () => ui.familiarfaces?.activate(),
       openFace: id => FaceSheet.open(id),
       addFace: prefill => addFaceDialog(prefill),
-      bindImage: (src, options) => bindImageDialog(src, options),
+      bindImage: gmOnly((src, options) => bindImageDialog(src, options)),
       faces: () => store.allFaces(),
       getFace: store.getFace,
       findByName: store.findByName,
-      canSeeFace: store.canSeeFace,
-      createFace: store.createFace,
-      updateFace: store.updateFace,
+      canSeeEntry: store.canSeeEntry,
+      canSeeFace: store.canSeeEntry,
+      createFace: apiCreate("faces"),
+      updateFace: apiUpdate("faces"),
       addToken: token => {
         const doc = token?.document ?? token;
         return game.user.isGM ? addNpcForAll(npcFromToken(doc)) : addNpcForMe(npcFromToken(doc));
       },
-      addActor: actor => addNpcForAll(npcFromActor(actor)),
-      shareWithParty: store.shareWithParty,
-      forgetFace: store.forgetFace,
-      setImage: store.setImage,
-      deleteFace: store.deleteFace,
+      addActor: gmOnly(actor => addNpcForAll(npcFromActor(actor))),
+      shareWithParty: apiShare("faces"),
+      forgetFace: apiForget("faces"),
+      setImage: apiSetImage("faces"),
+      deleteFace: apiDelete("faces"),
       notes: store.notesFor,
-      addNote: store.addNote,
+      addNote: apiAddNote("faces"),
       syncNameplates,
       // Places
       openPlaces: async () => {
@@ -212,21 +445,21 @@ Hooks.once("ready", async () => {
       },
       openPlace: id => PlaceSheet.open(id),
       addPlace: prefill => addPlaceDialog(prefill),
-      bindPlaceImage: (src, options) => bindImageDialog(src, { ...options, kind: "places" }),
+      bindPlaceImage: gmOnly((src, options) => bindImageDialog(src, { ...options, kind: "places" })),
       places: () => store.allPlaces(),
       getPlace: store.getPlace,
       findPlaceByName: store.findPlaceByName,
-      createPlace: store.createPlace,
-      updatePlace: store.updatePlace,
-      addScene: scene => addPlaceForAll(placeFromScene(scene)),
-      sharePlaceWithParty: store.sharePlaceWithParty,
-      forgetPlace: store.forgetPlace,
-      setPlaceImage: store.setPlaceImage,
-      deletePlace: store.deletePlace,
+      createPlace: apiCreate("places"),
+      updatePlace: apiUpdate("places"),
+      addScene: gmOnly(scene => addPlaceForAll(placeFromScene(scene))),
+      sharePlaceWithParty: apiShare("places"),
+      forgetPlace: apiForget("places"),
+      setPlaceImage: apiSetImage("places"),
+      deletePlace: apiDelete("places"),
       placeNotes: store.placeNotesFor,
-      addPlaceNote: store.addPlaceNote,
-      linkFace: store.linkFace,
-      unlinkFace: store.unlinkFace,
+      addPlaceNote: apiAddNote("places"),
+      linkFace: apiLinkFace,
+      unlinkFace: apiUnlinkFace,
       facesOfPlace: id => store.facesOfPlace(store.getPlace(id)).map(found => found.face),
       placesOfFace: id => store.placesOfFace(store.getFace(id)).map(found => found.place),
       // Factions
@@ -237,21 +470,21 @@ Hooks.once("ready", async () => {
       },
       openFaction: id => FactionSheet.open(id),
       addFaction: prefill => addFactionDialog(prefill),
-      bindFactionImage: (src, options) => bindImageDialog(src, { ...options, kind: "factions" }),
+      bindFactionImage: gmOnly((src, options) => bindImageDialog(src, { ...options, kind: "factions" })),
       factions: () => store.allFactions(),
       getFaction: store.getFaction,
       findFactionByName: store.findFactionByName,
-      createFaction: store.createFaction,
-      updateFaction: store.updateFaction,
-      shareFactionWithParty: store.shareFactionWithParty,
-      forgetFaction: store.forgetFaction,
-      setFactionImage: store.setFactionImage,
-      deleteFaction: store.deleteFaction,
+      createFaction: apiCreate("factions"),
+      updateFaction: apiUpdate("factions"),
+      shareFactionWithParty: apiShare("factions"),
+      forgetFaction: apiForget("factions"),
+      setFactionImage: apiSetImage("factions"),
+      deleteFaction: apiDelete("factions"),
       factionNotes: store.factionNotesFor,
-      addFactionNote: store.addFactionNote,
-      linkToFaction: store.linkToFaction,
-      unlinkFromFaction: store.unlinkFromFaction,
-      setFactionRole: store.setFactionRole,
+      addFactionNote: apiAddNote("factions"),
+      linkToFaction: apiLinkToFaction,
+      unlinkFromFaction: apiFactionLinkChange(store.unlinkFromFaction),
+      setFactionRole: apiFactionLinkChange(store.setFactionRole),
       membersOfFaction: id => store.membersOfFaction(store.getFaction(id), "faces").map(({ entry, link }) => ({ face: entry, role: link.role })),
       placesOfFaction: id => store.membersOfFaction(store.getFaction(id), "places").map(({ entry, link }) => ({ place: entry, role: link.role })),
       factionsOf: (kind, id) => store.factionsOf(store.getEntry(kind, id)).map(({ faction, link }) => ({ faction, role: link.role })),
