@@ -28,7 +28,7 @@ In Foundry: **Add-on Modules → Install Module**, paste this link into **Manife
 https://github.com/dxcufgb/FoundryVTT-familiar-faces/releases/latest/download/module.json
 ```
 
-Enable it in your world. The first time a GM opens the world with the module enabled, it sets up its storage (a few journal entries that are hidden from the Journal directory). Players see the tab right away, but can only write private notes once that has happened.
+Enable it in your world. The first time a GM opens the world with the module enabled, it sets up its storage (a few journal entries that are hidden from the Journal directory). Until then the tab only says that it isn't set up yet.
 
 ## For the GM
 
@@ -115,15 +115,15 @@ With **Dxcufgb's Quest log** active, a note you add about an NPC, a place or a f
 | Notifications | World | Tell players when someone, some place or a faction is added, gets a picture, or a note is shared with them. |
 | Players can add NPCs, places and factions | World | Lets players add people, places and factions for the party themselves (portraits and pictures stay GM-only). Off by default. Players can always add them to their own lists. |
 | Link notes to the Quest log | World | With Dxcufgb's Quest log active, new notes link the quests, quest rewards and party notes they mention. On by default. |
-| Picture upload folder | World | Where uploaded portraits and place pictures go. Empty: `worlds/<world>/familiar-faces`. |
-| Right-click selected names | User | The *Add to Familiar Faces* and *Add to Familiar Places* menu on selected names. |
-| Right-click journal images (GM) | User | The *Add image to NPC* and *Add image to place* menu on journal images. |
+| Picture upload folder | World | Where uploaded portraits and pictures of places and factions go. Empty: `worlds/<world>/familiar-faces`. |
+| Right-click selected names | User | The *Add to Familiar Faces*, *Add to Familiar Places* and *Add as a faction* menu on selected names. |
+| Right-click journal images (GM) | User | The *Add image to NPC*, *Add image to place* and *Add image to faction* menu on journal images. |
 | Show the names of NPCs the party knows | World | When an NPC is in every player's Familiar Faces, all its tokens show their name to everyone on hover (see below). On by default. |
 | Right-click NPC tokens | User | Players: the *Add to my Familiar Faces* menu on NPC tokens. GM: the Familiar Faces button on NPC token HUDs. |
 
 ## No new NPCs in the middle of a fight
 
-Nobody has time to make new acquaintances during combat. While a combat encounter is running (it has started), players can't add NPCs – not from tokens, selected names, journals or the **Add NPC** button – and can't share NPCs with the party. Right-clicking an NPC token or a selected name says so instead, and the Add NPC button is greyed out. Opening NPCs and writing notes still work, and everything is back as soon as the combat ends. The GM can still add and share NPCs during combat. Places aren't affected: you can always note where you are.
+Nobody has time to make new acquaintances during combat. While a combat encounter is running (it has started), players can't add NPCs – not from tokens, selected names, journals or the **Add NPC** button – and can't share NPCs with the party. Right-clicking an NPC token or a selected name says so instead, and the Add NPC button is greyed out. Opening NPCs and writing notes still work, and everything is back as soon as the combat ends. The GM can still add and share NPCs during combat. Places and factions aren't affected: you can always note where you are.
 
 ## Names on hover for NPCs the party knows
 
@@ -136,56 +136,96 @@ As soon as an NPC is in every player's Familiar Faces – the GM added them for 
 
 ## Works with Dxcufgb's Quest log
 
-The Quest log has its own menu for selected text. With both modules enabled, the Familiar Faces & Places items are added to the bottom of the Quest log's menu, so one right-click on a selected name offers both. New notes also link the quests, rewards and party notes they mention (see *Links to the Quest log*).
+The Quest log has its own menu for selected text. With both modules enabled, the Familiar Faces & Places items are added to the bottom of the Quest log's menu, so one right-click on a selected name offers both. New notes also link the quests, rewards and party notes they mention (see *Links to the Quest log*). Without the Quest log everything else works the same.
 
 ## For macro and module authors
 
 ```js
 const ff = game.modules.get("dxcufgbs-familiar-faces").api;
 ff.open();                                   // switch to the tab
-ff.faces();                                  // [{id, name, img, metAt, info, source, ...}]
+ff.faces();                                  // [{id, name, img, metAt, info, source, actor, knownBy, ...}]
+ff.getFace(id);                              // one NPC, or null (also null when the user doesn't have it)
 ff.findByName("Mira Ashgrove");
 ff.addFace({ name: "Mira Ashgrove", img: "path/to/mira.webp" });   // opens the Add window
 await ff.createFace({ name: "Mira Ashgrove", metAt: "Saltmarsh" }); // no window; returns the id
-ff.bindImage("path/to/mira.webp");           // opens the Add image to NPC search
+await ff.updateFace(id, { metAt: "Phandalin", info: "Runs the Stonehill Inn." }); // only the fields given
+ff.bindImage("path/to/mira.webp");           // GM: opens the Add image to NPC search
+await ff.setImage(id, "path/to/mira.webp");  // set the portrait directly ("" removes it)
 ff.addToken(token);                          // GM: for all players; player: to their own Familiar Faces
 ff.addActor(actor);                          // GM: add an NPC actor for all players
 ff.shareWithParty(id);                       // GM, or a player who has the NPC: put it in everyone's list
 ff.forgetFace(id);                           // player: remove an NPC from their own list
+await ff.deleteFace(id);                     // remove the NPC and its notes
+ff.notes(id);                                // the notes about an NPC the user can see
+await ff.addNote(id, { text: "Owes us a favour.", place: "Saltmarsh", visibility: "everyone" }); // returns the note id
 await ff.syncNameplates();                   // GM: update the tokens of party-known NPCs now
 ff.openFace(id);
 
 // Places
 ff.openPlaces();                             // switch to the tab's Places list
-ff.places();                                 // [{id, name, img, region, info, source, scene, links, ...}]
+ff.places();                                 // [{id, name, img, region, info, source, scene, links, knownBy, ...}]
+ff.getPlace(id);
 ff.findPlaceByName("Saltmarsh");
 ff.addPlace({ name: "Saltmarsh", region: "Sword Coast" });      // opens the Add place window
 await ff.createPlace({ name: "Saltmarsh", region: "Sword Coast", scene: scene.uuid }); // no window; returns the id
-ff.bindPlaceImage("path/to/saltmarsh.webp"); // opens the Add image to place search
+await ff.updatePlace(id, { region: "The Sword Coast" });
+ff.bindPlaceImage("path/to/saltmarsh.webp"); // GM: opens the Add image to place search
+await ff.setPlaceImage(id, "path/to/saltmarsh.webp");
 ff.addScene(scene);                          // GM: add a scene as a place for all players
-await ff.linkFace(placeId, faceId);          // link an NPC to a place (unlinkFace to undo)
+await ff.linkFace(placeId, faceId);          // link an NPC to a place
+await ff.unlinkFace(placeId, faceId);        // remove that link again
 ff.facesOfPlace(placeId);                    // the NPCs met at, noted at or linked to a place
 ff.placesOfFace(faceId);                     // the places of an NPC
+ff.placeNotes(id); await ff.addPlaceNote(id, { text: "The harbour master is bribable.", visibility: "private" });
 ff.sharePlaceWithParty(id); ff.forgetPlace(id); ff.openPlace(id);
+await ff.deletePlace(id);
 
 // Factions
 ff.openFactions();                           // switch to the tab's Factions list
-ff.factions();                               // [{id, name, img, category, info, source, links, placeLinks, ...}]
+ff.factions();                               // [{id, name, img, category, info, source, links, placeLinks, knownBy, ...}]
+ff.getFaction(id);
 ff.findFactionByName("Zhentarim");
 ff.addFaction({ name: "Zhentarim", category: "Mercenaries" });  // opens the Add faction window
 await ff.createFaction({ name: "Zhentarim", category: "Mercenaries" }); // no window; returns the id
-ff.bindFactionImage("path/to/zhentarim.webp"); // opens the Add image to faction search
+await ff.updateFaction(id, { category: "Thieves' guild" });
+ff.bindFactionImage("path/to/zhentarim.webp"); // GM: opens the Add image to faction search
+await ff.setFactionImage(id, "path/to/zhentarim.webp");
 await ff.linkToFaction(factionId, "faces", faceId, "Leader");    // or "places", placeId, "Headquarters"
-await ff.setFactionRole(factionId, "faces", faceId, "Informant"); // unlinkFromFaction(factionId, kind, id) to undo
+await ff.setFactionRole(factionId, "faces", faceId, "Informant");
+await ff.unlinkFromFaction(factionId, "faces", faceId);
 ff.membersOfFaction(factionId);              // [{face, role}]
 ff.placesOfFaction(factionId);               // [{place, role}]
 ff.factionsOf("faces", faceId);              // [{faction, role}] (or "places", placeId)
-ff.factionNotes(factionId); await ff.addFactionNote(factionId, { text, visibility: "everyone" });
+ff.factionNotes(factionId); await ff.addFactionNote(factionId, { text: "They hire in Phandalin.", visibility: "everyone" });
 ff.shareFactionWithParty(id); ff.forgetFaction(id); ff.openFaction(id);
+await ff.deleteFaction(id);
 
 // Dxcufgb's Quest log
 ff.linkQuestLog("We met her on The Silver Thread"); // the text with the quests, rewards and notes it names linked
 ```
+
+Everything only returns and finds what the current user has in their lists: the GM gets everything, a player the party's NPCs, places and factions plus their own. `getFace`, `getPlace`, `getFaction` and the `find…ByName` calls take `{ any: true }` to also find the ones only other players have. `canSeeFace(entry, user)` tells whether a user has an NPC, place or faction in their lists.
+
+- **Creating**: `createFace` takes `name`, `img`, `metAt`, `info`, `source` (`{uuid, label}`, the link back to a journal), `actor` (an actor uuid) and `knownBy` (a list of user ids: only those players get it; leave it out for the whole party). `createPlace` takes `region` and `scene` (a scene uuid) instead of `metAt` and `actor`, `createFaction` takes `category`. A player can't create or share NPCs while a combat has started (they throw); places and factions aren't affected.
+- **The `add…` calls** open the Add window with the given values filled in and return a Promise of the new id, or `null` when it was cancelled or the user may not add.
+- **Links**: `linkFace`, `unlinkFace`, `linkToFaction`, `setFactionRole` and `unlinkFromFaction` return `true`, or `false` when nothing changed (already linked, not allowed). Anyone who has both in their lists can link them; the link's maker, the creator of the place or faction and the GM can change or remove it. `kind` is `"faces"` or `"places"`.
+- **Notes**: `addNote`, `addPlaceNote` and `addFactionNote` take `{text, visibility, sharedWith}`, and NPC notes also `place`. `visibility` is `"private"` (only the author), `"everyone"` (the party) or `"some"` with `sharedWith` a list of user ids (an empty list keeps the note private). They return the note's id, or `null` for an empty note. With the Quest log active (and **Link notes to the Quest log** on), the text gets its Quest log links like a note added in the window. A note object has `{id, text, place, visibility, sharedWith, createdBy, authorName, createdAt, editedAt}`.
+- **`shareWithParty`, `forgetFace`** and the place and faction versions return a Promise of `true`, or `false` when the user may not do it.
+- **Permissions**: in the module's own windows only the GM sets portraits and pictures, only the GM or the creator edits or removes an NPC, place or faction, and players add for the party only with **Players can add NPCs, places and factions**. The data calls (`create…`, `update…`, `setImage`, `delete…` and their place and faction versions) don't check that themselves, so check `game.user.isGM` before calling them for a player. `deleteFace` (and the others) also removes the entry from places and factions; run by a GM, it clears everyone's private notes about it too.
+
+**From another module**
+
+The API is set in the module's own `ready` hook, after it has checked its storage (an `await`), so it isn't there yet while other modules' `ready` hooks run. Get it when you need it (a button, a later hook) rather than once at `ready`, and check that it's there:
+
+```js
+const familiarFaces = () => game.modules.get("dxcufgbs-familiar-faces")?.active ? game.modules.get("dxcufgbs-familiar-faces").api ?? null : null;
+
+// later, e.g. when the user clicks something:
+const ff = familiarFaces();
+if (ff) console.log(ff.faces().map(face => face.name));   // null: not installed, not enabled, or not ready yet
+```
+
+Add `{ "id": "dxcufgbs-familiar-faces", "type": "module" }` to `relationships.recommends` in your `module.json`. The module calls no hooks of its own, so there is no event that says the API is ready. Its data lives in the flags of journal entries it hides from the Journal directory; that layout is internal and may change, so read and write through the API.
 
 ## Credits
 
