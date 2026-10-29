@@ -428,6 +428,17 @@
       "BindFactionImage": "Add image to faction…",
       "NewFactionWithImage": "New faction with this image…"
     },
+    "Api": {
+      "GMOnly": "Only the GM can do that.",
+      "OnlyOwnList": "Players can only add to their own list, not to other players' lists.",
+      "CannotEdit": "Only the GM or whoever added {name} can change it.",
+      "CannotDelete": "Only the GM or whoever added {name} can remove it.",
+      "ImageGMOnly": "Only the GM sets pictures. Players can pick a placeholder look while there is no real picture.",
+      "CannotShare": "Only the GM or a player who has {name} in their list can share it with the party.",
+      "CannotForget": "{name} isn't one you can take out of your own list.",
+      "CannotLink": "You can only link what you have in your own lists.",
+      "CannotUnlink": "Only the one who made this link, whoever added {name}, or the GM can change or remove it."
+    },
     "Settings": {
       "Notify": {
         "Name": "Notifications",
