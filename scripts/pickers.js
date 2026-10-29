@@ -3,15 +3,26 @@ import { tokenize } from "./search.js";
 import { hasRealPortrait } from "./placeholders.js";
 
 /*
- * A searchable list of faces or places to pick from: the "Add image to NPC/place" dialog (one, radio buttons) and the
+ * A searchable list of faces, places or factions to pick from: the "Add image to NPC/place/faction" dialog (one, radio buttons) and the
  * link dialogs of the sheets (several, checkboxes).
  */
 
-/** The line under a name: where a face was first met, or the region of a place. */
+const SUBLINE = {
+  faces: { field: "metAt", icon: "fa-solid fa-location-dot" },
+  places: { field: "region", icon: "fa-solid fa-map" },
+  factions: { field: "category", icon: "fa-solid fa-tag" }
+};
+
+/** The line under a name: where a face was first met, the region of a place, or the kind of a faction. */
 function subline(entry) {
-  const text = entry.kind === "places" ? entry.region : entry.metAt;
-  const icon = entry.kind === "places" ? "fa-solid fa-map" : "fa-solid fa-location-dot";
+  const { field, icon } = SUBLINE[entry.kind] ?? SUBLINE.faces;
+  const text = entry[field];
   return text ? `<small><i class="${icon}" inert></i> ${escapeHTML(text)}</small>` : "";
+}
+
+/** Faces are round, places rounded squares, factions crests. */
+export function avatarClass(kind) {
+  return kind === "places" ? "dxff-square" : kind === "factions" ? "dxff-crest" : "";
 }
 
 /**
@@ -25,11 +36,11 @@ function subline(entry) {
 export function entryOptionsHTML(entries, { type = "radio", checked = "", portraitMark = false } = {}) {
   return entries.map(e => `
     <li>
-      <label class="dxff-bind-option" data-search="${escapeHTML(`${e.name} ${e.metAt ?? ""} ${e.region ?? ""}`.toLowerCase())}">
+      <label class="dxff-bind-option" data-search="${escapeHTML(`${e.name} ${e.metAt ?? ""} ${e.region ?? ""} ${e.category ?? ""}`.toLowerCase())}">
         <input type="${type}" name="entryId" value="${escapeHTML(e.id)}" ${e.id === checked ? "checked" : ""}>
-        <span class="dxff-avatar ${e.kind === "places" ? "dxff-square" : ""}" style="--hue: ${nameHue(e.name)}">${e.img ? `<img src="${escapeHTML(e.img)}" alt="">` : `<span>${escapeHTML(initials(e.name))}</span>`}</span>
+        <span class="dxff-avatar ${avatarClass(e.kind)}" style="--hue: ${nameHue(e.name)}">${e.img ? `<img src="${escapeHTML(e.img)}" alt="">` : `<span>${escapeHTML(initials(e.name))}</span>`}</span>
         <span class="dxff-bind-name">${escapeHTML(e.name)}${subline(e)}</span>
-        ${portraitMark && hasRealPortrait(e.img) ? `<i class="fa-solid fa-image dxff-has-portrait" data-tooltip="${escapeHTML(t(e.kind === "places" ? "HasPicture" : "HasPortrait"))}"></i>` : ""}
+        ${portraitMark && hasRealPortrait(e.img) ? `<i class="fa-solid fa-image dxff-has-portrait" data-tooltip="${escapeHTML(t(e.kind === "faces" ? "HasPortrait" : "HasPicture"))}"></i>` : ""}
       </label>
     </li>`).join("");
 }

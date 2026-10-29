@@ -1,4 +1,5 @@
 import { MODULE_ID, VISIBILITY, t, isResponsibleGM, randomId, cleanLine, combatBlocks } from "./util.js";
+import { autoLinkQuestLog } from "./quest-links.js";
 
 /*
  * Everything lives in the flags of journal entries that the module creates and hides from the Journal directory:
@@ -8,32 +9,37 @@ import { MODULE_ID, VISIBILITY, t, isResponsibleGM, randomId, cleanLine, combatB
  *       flags.<module>.notes.<faceId>.<noteId>      = {text, place, sharedWith, createdBy, authorName, createdAt, editedAt}
  *       flags.<module>.places.<placeId>             = {name, img, region, info, source, scene, faces, knownBy, createdBy, createdAt, updatedAt}
  *       flags.<module>.placeNotes.<placeId>.<noteId> = {text, sharedWith, createdBy, authorName, createdAt, editedAt}
+ *       flags.<module>.factions.<factionId>         = {name, img, category, info, source, faces, places, knownBy, createdBy, createdAt, updatedAt}
+ *       flags.<module>.factionNotes.<factionId>.<noteId> = {text, sharedWith, createdBy, authorName, createdAt, editedAt}
  *     sharedWith [] = the whole party; a list of user ids = only those players (plus the author and GMs).
  *     knownBy missing = known by the whole party; {<userId>: true} = only in those players' lists (plus GMs).
  *     It is a keyed object so two players adding the same NPC at the same time don't overwrite each other.
  *     A place's faces = {<faceId>: {by, at}}: the NPCs linked to it by hand (keyed for the same reason).
+ *     A faction's faces and places = {<id>: {by, at, role}}: its members and its places, each with an optional role
+ *     ("Leader", "Headquarters").
  *   - one "private" store per user (default ownership NONE, that user OWNER): the user's private notes, same shape
- *     (notes and placeNotes).
+ *     (notes, placeNotes and factionNotes).
  * Every write is a dot-path update of one key, so several people writing notes at the same time never overwrite
  * each other.
  *
- * Faces and places work the same way; most functions take a kind ("faces" or "places"), and the face functions of
+ * Faces, places and factions work the same way; most functions take a kind ("faces", "places" or "factions"), and
+ * the face functions of
  * the earlier versions (createFace, notesFor, ...) are kept as they were.
  */
 
-export const KINDS = ["faces", "places"];
-const NOTE_KEYS = { faces: "notes", places: "placeNotes" };
-const GONE = { faces: "FaceGone", places: "PlaceGone" };
+export const KINDS = ["faces", "places", "factions"];
+const NOTE_KEYS = { faces: "notes", places: "placeNotes", factions: "factionNotes" };
+const GONE = { faces: "FaceGone", places: "PlaceGone", factions: "FactionGone" };
 const O = () => CONST.DOCUMENT_OWNERSHIP_LEVELS;
 
-function kindOf(kind) {
-  return kind === "places" ? "places" : "faces";
+export function kindOf(kind) {
+  return KINDS.includes(kind) ? kind : "faces";
 }
 
 const entriesPath = kind => `flags.${MODULE_ID}.${kindOf(kind)}`;
 const notesPath = kind => `flags.${MODULE_ID}.${NOTE_KEYS[kindOf(kind)]}`;
 
-/** Players can't add or share NPCs during a fight; places aren't affected. */
+/** Players can't add or share NPCs during a fight; places and factions aren't affected. */
 function blocked(kind) {
   return kindOf(kind) === "faces" && combatBlocks();
 }
@@ -71,7 +77,7 @@ function privateStoreData(user) {
   return {
     name: t("StorePrivate", { name: user.name }),
     ownership: { default: O().NONE, [user.id]: O().OWNER },
-    flags: { [MODULE_ID]: { store: "private", owner: user.id, notes: {}, placeNotes: {} } }
+    flags: { [MODULE_ID]: { store: "private", owner: user.id, notes: {}, placeNotes: {}, factionNotes: {} } }
   };
 }
 
@@ -82,7 +88,7 @@ export async function ensureStores() {
     await JournalEntry.implementation.create({
       name: t("StoreShared"),
       ownership: { default: O().OWNER },
-      flags: { [MODULE_ID]: { store: "shared", faces: {}, notes: {}, places: {}, placeNotes: {} } }
+      flags: { [MODULE_ID]: { store: "shared", faces: {}, notes: {}, places: {}, placeNotes: {}, factions: {}, factionNotes: {} } }
     });
   }
   const missing = game.users.filter(u => !getPrivate(u.id));
@@ -160,17 +166,54 @@ export function normalizePlace(id, raw) {
   };
 }
 
-function normalize(kind, id, raw) {
-  return kindOf(kind) === "places" ? normalizePlace(id, raw) : normalizeFace(id, raw);
+/** The NPCs or places of a faction: [{<idKey>, by, at, role}]. A link has at least its maker or its time. */
+function normalizeFactionLinks(raw, idKey) {
+  if (!raw || typeof raw !== "object") return [];
+  return Object.entries(raw)
+    .filter(([, link]) => link && typeof link === "object" && (link.by || link.at))
+    .map(([id, link]) => ({ [idKey]: id, by: link.by ?? null, at: link.at ?? 0, role: cleanLine(link.role, ROLE_MAX) }));
 }
 
-const NAME_MAX = { faces: 80, places: 120 };
+export function normalizeFaction(id, raw) {
+  return {
+    id,
+    kind: "factions",
+    name: cleanLine(raw.name, 120) || t("Unnamed"),
+    img: typeof raw.img === "string" ? raw.img : "",
+    category: cleanLine(raw.category, 120),
+    info: String(raw.info ?? ""),
+    source: normalizeSource(raw.source),
+    links: normalizeFactionLinks(raw.faces, "faceId"),
+    placeLinks: normalizeFactionLinks(raw.places, "placeId"),
+    knownBy: normalizeKnownBy(raw.knownBy),
+    createdBy: raw.createdBy ?? null,
+    createdAt: raw.createdAt ?? 0,
+    updatedAt: raw.updatedAt ?? raw.createdAt ?? 0
+  };
+}
+
+function normalize(kind, id, raw) {
+  kind = kindOf(kind);
+  if (kind === "places") return normalizePlace(id, raw);
+  if (kind === "factions") return normalizeFaction(id, raw);
+  return normalizeFace(id, raw);
+}
+
+const NAME_MAX = { faces: 80, places: 120, factions: 120 };
+/** The longest role of an NPC or place in a faction. */
+export const ROLE_MAX = 80;
+/** The fields of each kind that can be set when creating or editing it. */
+const FIELDS = {
+  faces: ["name", "img", "metAt", "info", "source", "actor"],
+  places: ["name", "img", "region", "info", "source", "scene"],
+  factions: ["name", "img", "category", "info", "source"]
+};
 
 /* -------------------------------------------- */
 /*  Faces and places                            */
 /* -------------------------------------------- */
 
-/** Whether a user has this face or place in their lists: GMs see everything, players the party's and their own. */
+/** Whether a user has this face, place or faction in their lists: GMs see everything, players the party's and their own. */
 export function canSeeEntry(entry, user = game.user) {
   return !!entry && (user.isGM || !entry.knownBy || entry.knownBy.includes(user.id));
 }
@@ -222,12 +265,11 @@ export function canForgetEntry(entry) {
 /** The fields of a new or changed entry, cleaned. */
 function cleanFields(kind, changes) {
   const out = {};
-  const fields = kindOf(kind) === "places" ? ["name", "img", "region", "info", "source", "scene"] : ["name", "img", "metAt", "info", "source", "actor"];
-  for (const key of fields) {
+  for (const key of FIELDS[kindOf(kind)]) {
     if (!(key in changes)) continue;
     const value = changes[key];
     if (key === "name") out.name = cleanLine(value, NAME_MAX[kindOf(kind)]) || t("Unnamed");
-    else if (key === "metAt" || key === "region") out[key] = cleanLine(value, 120);
+    else if (key === "metAt" || key === "region" || key === "category") out[key] = cleanLine(value, 120);
     else if (key === "info") out.info = String(value ?? "").trim();
     else if (key === "img") out.img = String(value ?? "");
     else if (key === "source") out.source = normalizeSource(value);
@@ -257,7 +299,8 @@ export async function createEntry(kind, { name, knownBy = null, ...rest } = {}) 
     updatedAt: now
   };
   if (kind === "faces") data.metAt = fields.metAt ?? "";
-  else data.region = fields.region ?? "";
+  else if (kind === "places") data.region = fields.region ?? "";
+  else data.category = fields.category ?? "";
   if (fields.actor) data.actor = fields.actor;
   if (fields.scene) data.scene = fields.scene;
   const knowers = Array.isArray(knownBy) ? [...new Set(knownBy.filter(Boolean))] : null;
@@ -298,12 +341,22 @@ export async function shareEntryWithParty(kind, id) {
   return true;
 }
 
-/** The changes that remove an entry and its shared notes (and, for a face, its links from places). */
+/**
+ * The changes that remove an entry and its shared notes, and the links to it: a face from places and factions, a
+ * place from factions.
+ */
 function removalChanges(kind, id) {
   const changes = { [`${entriesPath(kind)}.-=${id}`]: null, [`${notesPath(kind)}.-=${id}`]: null };
   if (kind === "faces") {
     for (const place of everyEntry("places")) {
       if (place.links.some(l => l.faceId === id)) changes[`${entriesPath("places")}.${place.id}.faces.-=${id}`] = null;
+    }
+  }
+  if (kind === "faces" || kind === "places") {
+    const key = kind === "faces" ? "faceId" : "placeId";
+    for (const faction of everyEntry("factions")) {
+      const links = kind === "faces" ? faction.links : faction.placeLinks;
+      if (links.some(l => l[key] === id)) changes[`${entriesPath("factions")}.${faction.id}.${kind}.-=${id}`] = null;
     }
   }
   return changes;
@@ -469,6 +522,113 @@ export function placesOfFace(face, notes = notesFor(face?.id), places = allPlace
 }
 
 /* -------------------------------------------- */
+/*  Factions                                    */
+/* -------------------------------------------- */
+
+export const everyFaction = () => everyEntry("factions");
+export const allFactions = () => allEntries("factions");
+export const getFaction = (id, options) => getEntry("factions", id, options);
+export const findFactionByName = (name, options) => findEntryByName("factions", name, options);
+export const createFaction = data => createEntry("factions", data);
+export const shareFactionWithParty = id => shareEntryWithParty("factions", id);
+export const forgetFaction = id => forgetEntry("factions", id);
+export const updateFaction = (id, changes) => updateEntry("factions", id, changes);
+export const setFactionImage = (id, src) => setEntryImage("factions", id, src);
+export const deleteFaction = id => deleteEntry("factions", id);
+
+/** A faction's links to NPCs ("faces") or places ("places"). */
+export function factionLinks(faction, kind) {
+  if (!faction) return [];
+  return kindOf(kind) === "places" ? faction.placeLinks : faction.links;
+}
+
+/** The link of an NPC or place in a faction, or null. */
+export function factionLinkOf(faction, kind, id) {
+  const key = kindOf(kind) === "places" ? "placeId" : "faceId";
+  return factionLinks(faction, kind).find(l => l[key] === id) ?? null;
+}
+
+/** Anyone who has both the faction and the NPC (or place) in their lists can link them. */
+export function canLinkFaction(faction, entry) {
+  return !!faction && !!entry && canSeeEntry(faction) && canSeeEntry(entry);
+}
+
+/** A faction's link (and its role) is changed or removed by the one who made it, the faction's editor, or a GM. */
+export function canUnlinkFaction(faction, link) {
+  return !!faction && !!link && (game.user.isGM || link.by === game.user.id || canEditEntry(faction));
+}
+
+/**
+ * Links an NPC (kind "faces") or a place (kind "places") to a faction, with an optional role ("Leader",
+ * "Headquarters").
+ */
+export async function linkToFaction(factionId, kind, id, role = "") {
+  kind = kindOf(kind);
+  if (kind === "factions") return false;
+  const faction = getFaction(factionId);
+  const entry = getEntry(kind, id);
+  if (!faction) throw new Error(t("FactionGone"));
+  if (!entry) throw new Error(t(GONE[kind]));
+  if (!canLinkFaction(faction, entry) || factionLinkOf(faction, kind, id)) return false;
+  const now = Date.now();
+  await write(getShared(), {
+    [`${entriesPath("factions")}.${factionId}.${kind}.${id}`]: { by: game.user.id, at: now, role: cleanLine(role, ROLE_MAX) },
+    [`${entriesPath("factions")}.${factionId}.updatedAt`]: now
+  }, { type: "linked", kind: "factions", id: factionId, linkKind: kind, linkId: id });
+  return true;
+}
+
+export async function unlinkFromFaction(factionId, kind, id) {
+  kind = kindOf(kind);
+  const faction = getFaction(factionId);
+  const link = factionLinkOf(faction, kind, id);
+  if (!canUnlinkFaction(faction, link)) return false;
+  await write(getShared(), { [`${entriesPath("factions")}.${factionId}.${kind}.-=${id}`]: null },
+    { type: "unlinked", kind: "factions", id: factionId, linkKind: kind, linkId: id });
+  return true;
+}
+
+/** Changes the role of an NPC or place in a faction (only that key is written). */
+export async function setFactionRole(factionId, kind, id, role = "") {
+  kind = kindOf(kind);
+  const faction = getFaction(factionId);
+  const link = factionLinkOf(faction, kind, id);
+  if (!canUnlinkFaction(faction, link)) return false;
+  await write(getShared(), {
+    [`${entriesPath("factions")}.${factionId}.${kind}.${id}.role`]: cleanLine(role, ROLE_MAX)
+  }, { type: "updated", kind: "factions", id: factionId });
+  return true;
+}
+
+/**
+ * The NPCs (kind "faces") or places (kind "places") of a faction that the current user can see, with their links.
+ * @returns {{entry: object, link: object}[]}
+ */
+export function membersOfFaction(faction, kind = "faces", entries = allEntries(kind)) {
+  if (!faction) return [];
+  const out = [];
+  for (const entry of entries) {
+    const link = factionLinkOf(faction, kind, entry.id);
+    if (link) out.push({ entry, link });
+  }
+  return out.sort((a, b) => a.entry.name.localeCompare(b.entry.name, undefined, { numeric: true, sensitivity: "base" }));
+}
+
+/**
+ * The factions an NPC or place belongs to that the current user can see, with the links.
+ * @returns {{faction: object, link: object}[]}
+ */
+export function factionsOf(entry, factions = allFactions()) {
+  if (!entry || entry.kind === "factions") return [];
+  const out = [];
+  for (const faction of factions) {
+    const link = factionLinkOf(faction, entry.kind, entry.id);
+    if (link) out.push({ faction, link });
+  }
+  return out.sort((a, b) => a.faction.name.localeCompare(b.faction.name, undefined, { numeric: true, sensitivity: "base" }));
+}
+
+/* -------------------------------------------- */
 /*  Notes                                       */
 /* -------------------------------------------- */
 
@@ -553,14 +713,15 @@ export function canDeleteNote(note) {
 /**
  * Adds a note. visibility: "private" (the author's own store), "everyone" or "some" (the shared store, with the
  * chosen players in sharedWith). "some" without anyone chosen is kept private rather than shared with everybody.
- * Notes about places have no place of their own.
+ * Notes about places and factions have no place of their own. With the Quest log active, the quests, rewards and
+ * party notes the text mentions become links (quest-links.js).
  */
 export async function addEntryNote(kind, entryId, { text = "", place = "", visibility = "private", sharedWith = [] } = {}) {
   kind = kindOf(kind);
   if (!getEntry(kind, entryId)) throw new Error(t(GONE[kind]));
   const id = randomId();
   const data = {
-    text: String(text ?? "").trim(),
+    text: autoLinkQuestLog(String(text ?? "").trim()),
     createdBy: game.user.id,
     authorName: game.user.name,
     createdAt: Date.now(),
@@ -633,3 +794,8 @@ export const deleteNote = (faceId, noteId, where) => deleteEntryNote("faces", fa
 export const visibleNotesByPlace = () => visibleNotesBy("places");
 export const placeNotesFor = placeId => notesOf("places", placeId);
 export const addPlaceNote = (placeId, data) => addEntryNote("places", placeId, data);
+
+/* Faction notes. */
+export const visibleNotesByFaction = () => visibleNotesBy("factions");
+export const factionNotesFor = factionId => notesOf("factions", factionId);
+export const addFactionNote = (factionId, data) => addEntryNote("factions", factionId, data);

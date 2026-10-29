@@ -12,6 +12,10 @@ Everyone the party has met and every place they have been, in its own tab in the
 
 Places work the same way: the GM adds them from the journals or the Scenes directory, players add the places they visit to their own list, and everyone keeps notes about them. NPCs and places are linked: a place lists the people met there, and an NPC lists the places they belong to.
 
+**Factions** – guilds, noble houses, cults, gangs – are the third list. A faction links to any number of NPCs (its members) and places (its headquarters, hideouts, territory), each with an optional role such as *Leader* or *Headquarters*, and everyone keeps notes about it like about NPCs and places.
+
+With **Dxcufgb's Quest log** active, new notes link the quests, quest rewards and party notes they mention by name.
+
 *Called Familiar Faces until version 1.1. The module id (`dxcufgbs-familiar-faces`) hasn't changed, so updating keeps everything you had.*
 
 **Foundry VTT:** v13 · **System:** any
@@ -45,13 +49,19 @@ Hold **Shift** while right-clicking to get the normal menu instead. The menus ca
 - **Right-click a scene in the Scenes directory** → *Add to Familiar Places*. The scene goes straight into every player's Familiar Places with its name and background (or thumbnail) as the picture, and is linked to the scene.
 - Or use **Add place** at the top of the **Places** list. It starts with the current scene's name and offers to link the scene.
 
+### Adding a faction
+
+- **Select a faction's name in any journal and right-click it** → *Add “Name” as a faction*. The window has the name, **Type** (a guild, a noble house, a cult…), an optional **What the party knows** text and a choice of picture from the journal page.
+- **Right-click a journal or a journal page** → *Add as a faction*.
+- Or use **Add faction** at the top of the **Factions** list.
+
 ### Portraits and pictures
 
 - **Right-click an image in a journal** → *Add image to NPC…*. A search window lists every NPC; type a few letters, pick one (or double-click it) and the image becomes their portrait. If the page name or the image caption contains someone's name, that NPC is picked for you. *New NPC with this image* adds a new NPC with that portrait instead.
 - Image journal pages also have *Add image to NPC…* in their right-click menu in the journal's page list.
 - In an NPC's window, drop an image file, an image link, an actor, a tile or an image journal page onto the portrait, or use the buttons on it to pick a file, upload one, show the portrait to the players, or remove it.
 
-Places have pictures the same way: *Add image to place…* on journal images and image pages, and the same buttons and drop target on the place's picture. Dropping a scene on a place's picture also links the place to that scene.
+Places have pictures the same way: *Add image to place…* on journal images and image pages, and the same buttons and drop target on the place's picture. Dropping a scene on a place's picture also links the place to that scene. Factions too: *Add image to faction…* and *New faction with this image…*.
 
 Only the GM can set portraits and pictures.
 
@@ -59,7 +69,7 @@ Only the GM can set portraits and pictures.
 
 Right-click an NPC in the tab to open it, change or remove its portrait, show the portrait to the players, or remove the NPC. You see every NPC, also the ones players added for themselves; those have a small lock next to the name that tells who has them, and **Share with the party** (in the right-click menu, on the card and in the NPC's window) puts them in everyone's list. **Edit** in the NPC's window changes the name, where they were first met and what the party knows. Removing an NPC also removes everyone's notes about it.
 
-Places are managed the same way in the **Places** list: open, change or remove the picture, show it to the players, share a player's place with the party, edit (name, **Located in**, what the party knows) or remove it.
+Places are managed the same way in the **Places** list: open, change or remove the picture, show it to the players, share a player's place with the party, edit (name, **Located in**, what the party knows) or remove it. And factions in the **Factions** list (edit: name, **Type**, what the party knows). Removing an NPC or a place also removes it from its factions.
 
 ## For players
 
@@ -85,14 +95,26 @@ Places are managed the same way in the **Places** list: open, change or remove t
 - **Search** in the Places list finds names, regions, the description, your notes and the names of the people met there. **Group by → Region** lists places under where they are; click a region on a card to show only the places there. When the region is itself a place (*The Yawning Portal* located in *Waterdeep*), the place's window links to it, and *Waterdeep* lists its **Places here**.
 - Notes about a place work like notes about an NPC (Only me, Party, Some players), without the "where" field.
 
+### Factions
+
+- The **Factions** list shows the guilds, houses, cults and gangs your party knows of. **Add a faction you know of** (the button at the bottom of the list) puts one into your own list, with its **Type**, what you know about it and a **look**: one of 24 placeholder crests (a crown, a fleur-de-lys for a noble house, a mask for a thieves' guild, a cultist, a pirate flag…). **Share with the party** and **Remove from my factions** work as for NPCs, also during combat.
+- A faction's window lists its **Members** (NPCs) and its **Places**. Link them with the link button next to each heading; a faction can have any number of both. The pen on a link gives it a **role**: *Leader*, *Informant* or *Enemy* for an NPC, *Headquarters*, *Hideout* or *Territory* for a place. An NPC's and a place's window list their **Factions** the same way, with their own link button. The one who made a link, the faction's creator and the GM can change its role or remove it.
+- **Search** in the Factions list finds names, types, the description, your notes, and the names and roles of its members and places. **Group by → Type of faction** lists factions by type. Searching NPCs and places also finds them by the names of their factions.
+- Notes about a faction work like notes about a place (Only me, Party, Some players).
+
+### Links to the Quest log
+
+With **Dxcufgb's Quest log** active, a note you add about an NPC, a place or a faction is linked to the Quest log: the first time the note names a quest, a quest reward or a party note, the name becomes a link to it (you can click it to open the quest). Only whole names are linked, a longer name wins over a shorter one inside it (*The Black Road Bandits* before *The Black Road*), links already in the note are left alone, and only quests, rewards and notes you can see in the Quest log are linked. It happens when the note is added; editing a note later doesn't add links again. The GM can turn it off with **Link notes to the Quest log**.
+
 **How private is private?** Familiar Faces & Places only ever shows a note to the people it's meant for, and the GM can read every note. But Foundry sends all of a world's data to every connected player, including journals they have no permission to open, so a player who digs into the browser console could still find notes that weren't meant for them. Treat "Only me" and "Some players" like passing a note at the table, not like a locked diary. The same goes for NPCs and places a player added only to their own list.
 
 ## Settings
 
 | Setting | Scope | What it does |
 | --- | --- | --- |
-| Notifications | World | Tell players when someone or some place new is added, gets a picture, or a note is shared with them. |
-| Players can add NPCs and places | World | Lets players add people and places for the party themselves (portraits and pictures stay GM-only). Off by default. Players can always add NPCs and places to their own lists. |
+| Notifications | World | Tell players when someone, some place or a faction is added, gets a picture, or a note is shared with them. |
+| Players can add NPCs, places and factions | World | Lets players add people, places and factions for the party themselves (portraits and pictures stay GM-only). Off by default. Players can always add them to their own lists. |
+| Link notes to the Quest log | World | With Dxcufgb's Quest log active, new notes link the quests, quest rewards and party notes they mention. On by default. |
 | Picture upload folder | World | Where uploaded portraits and place pictures go. Empty: `worlds/<world>/familiar-faces`. |
 | Right-click selected names | User | The *Add to Familiar Faces* and *Add to Familiar Places* menu on selected names. |
 | Right-click journal images (GM) | User | The *Add image to NPC* and *Add image to place* menu on journal images. |
@@ -114,7 +136,7 @@ As soon as an NPC is in every player's Familiar Faces – the GM added them for 
 
 ## Works with Dxcufgb's Quest log
 
-The Quest log has its own menu for selected text. With both modules enabled, the Familiar Faces & Places items are added to the bottom of the Quest log's menu, so one right-click on a selected name offers both.
+The Quest log has its own menu for selected text. With both modules enabled, the Familiar Faces & Places items are added to the bottom of the Quest log's menu, so one right-click on a selected name offers both. New notes also link the quests, rewards and party notes they mention (see *Links to the Quest log*).
 
 ## For macro and module authors
 
@@ -145,11 +167,29 @@ await ff.linkFace(placeId, faceId);          // link an NPC to a place (unlinkFa
 ff.facesOfPlace(placeId);                    // the NPCs met at, noted at or linked to a place
 ff.placesOfFace(faceId);                     // the places of an NPC
 ff.sharePlaceWithParty(id); ff.forgetPlace(id); ff.openPlace(id);
+
+// Factions
+ff.openFactions();                           // switch to the tab's Factions list
+ff.factions();                               // [{id, name, img, category, info, source, links, placeLinks, ...}]
+ff.findFactionByName("Zhentarim");
+ff.addFaction({ name: "Zhentarim", category: "Mercenaries" });  // opens the Add faction window
+await ff.createFaction({ name: "Zhentarim", category: "Mercenaries" }); // no window; returns the id
+ff.bindFactionImage("path/to/zhentarim.webp"); // opens the Add image to faction search
+await ff.linkToFaction(factionId, "faces", faceId, "Leader");    // or "places", placeId, "Headquarters"
+await ff.setFactionRole(factionId, "faces", faceId, "Informant"); // unlinkFromFaction(factionId, kind, id) to undo
+ff.membersOfFaction(factionId);              // [{face, role}]
+ff.placesOfFaction(factionId);               // [{place, role}]
+ff.factionsOf("faces", faceId);              // [{faction, role}] (or "places", placeId)
+ff.factionNotes(factionId); await ff.addFactionNote(factionId, { text, visibility: "everyone" });
+ff.shareFactionWithParty(id); ff.forgetFaction(id); ff.openFaction(id);
+
+// Dxcufgb's Quest log
+ff.linkQuestLog("We met her on The Silver Thread"); // the text with the quests, rewards and notes it names linked
 ```
 
 ## Credits
 
-The placeholder pictures of NPCs and places use symbols from [game-icons.net](https://game-icons.net) by Lorc, Delapouite and contributors, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), recoloured and placed on backgrounds (see `assets/placeholders/LICENSE.txt`).
+The placeholder pictures of NPCs, places and factions use symbols from [game-icons.net](https://game-icons.net) by Lorc, Delapouite and contributors, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), recoloured and placed on backgrounds (see `assets/placeholders/LICENSE.txt`).
 
 ## Support
 

@@ -70,6 +70,20 @@ export function matchPlace(place, notes, terms, faceNames = []) {
   ], terms);
 }
 
+/**
+ * The same for a faction: its name, its kind, its members and places (that this user can see) and their roles, the
+ * info and the text of the notes this user can see.
+ */
+export function matchFaction(faction, notes, terms, linkedNames = []) {
+  return matchFields([
+    { text: faction.name, primary: true },
+    { text: faction.category, primary: true },
+    ...linkedNames.map(name => ({ text: name, primary: true })),
+    { text: plainText(faction.info) },
+    ...notes.map(n => ({ text: plainText(n.text) }))
+  ], terms);
+}
+
 function matchFields(all, terms) {
   if (!terms.length) return { snippet: null };
   const fields = all.filter(f => f.text);

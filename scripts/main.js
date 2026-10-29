@@ -1,13 +1,17 @@
-import { MODULE_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM } from "./util.js";
+import { MODULE_ID, QUEST_LOG_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM } from "./util.js";
 import * as store from "./store.js";
-import { FacesTab, MODES, GROUP_MODES, PLACE_GROUP_MODES, SORT_MODES } from "./apps/faces-tab.js";
+import { FacesTab, MODES, GROUP_MODES, PLACE_GROUP_MODES, FACTION_GROUP_MODES, SORT_MODES } from "./apps/faces-tab.js";
 import { EntrySheet } from "./apps/entry-sheet.js";
 import { FaceSheet } from "./apps/face-sheet.js";
 import { PlaceSheet } from "./apps/place-sheet.js";
-import { registerContextMenus, registerPointerMenus, addFaceDialog, addPlaceDialog, bindImageDialog } from "./capture.js";
+import { FactionSheet } from "./apps/faction-sheet.js";
+import {
+  registerContextMenus, registerPointerMenus, addFaceDialog, addPlaceDialog, addFactionDialog, bindImageDialog
+} from "./capture.js";
 import { registerNpcHooks, registerTokenMenu, addNpcForMe, addNpcForAll, npcFromToken, npcFromActor } from "./npcs.js";
 import { registerPlaceHooks, addPlaceForAll, placeFromScene } from "./places.js";
 import { registerNameplateHooks, requestNameplateSync, syncNameplates } from "./nameplates.js";
+import { linkMentions, questLogTargets } from "./quest-links.js";
 
 /* -------------------------------------------- */
 /*  Settings and the sidebar tab                */
@@ -51,6 +55,11 @@ function registerSettings() {
     scope: "world", config: true, type: Boolean, default: true,
     onChange: value => { if (value) requestNameplateSync(); }
   });
+  game.settings.register(MODULE_ID, "questLogLinks", {
+    name: "DXFF.Settings.QuestLogLinks.Name",
+    hint: "DXFF.Settings.QuestLogLinks.Hint",
+    scope: "world", config: true, type: Boolean, default: true
+  });
   game.settings.register(MODULE_ID, "groupBy", {
     scope: "client", config: false, type: String, default: "none",
     choices: Object.fromEntries(GROUP_MODES.map(g => [g, g]))
@@ -64,6 +73,14 @@ function registerSettings() {
     choices: Object.fromEntries(PLACE_GROUP_MODES.map(g => [g, g]))
   });
   game.settings.register(MODULE_ID, "placeSortBy", {
+    scope: "client", config: false, type: String, default: "name",
+    choices: Object.fromEntries(SORT_MODES.map(s => [s, s]))
+  });
+  game.settings.register(MODULE_ID, "factionGroupBy", {
+    scope: "client", config: false, type: String, default: "none",
+    choices: Object.fromEntries(FACTION_GROUP_MODES.map(g => [g, g]))
+  });
+  game.settings.register(MODULE_ID, "factionSortBy", {
     scope: "client", config: false, type: String, default: "name",
     choices: Object.fromEntries(SORT_MODES.map(s => [s, s]))
   });
@@ -101,17 +118,24 @@ function refreshAll() {
 /*  Notifications                               */
 /* -------------------------------------------- */
 
+/** The notification texts of each kind (DXFF.* keys). */
+const NOTIFY = {
+  faces: { created: "NotifyCreated", sharedBy: "NotifySharedBy", image: "NotifyPortrait" },
+  places: { created: "NotifyPlaceCreated", sharedBy: "NotifyPlaceSharedBy", image: "NotifyPicture" },
+  factions: { created: "NotifyFactionCreated", sharedBy: "NotifyFactionSharedBy", image: "NotifyPicture" }
+};
+
 function notifyChange(event, userId) {
   if (!event?.type || userId === game.user.id || !game.settings.get(MODULE_ID, "notify")) return;
-  const kind = event.kind === "places" ? "places" : "faces";
-  // Only faces and places this user has in their lists; a player's own NPCs don't concern the GM or the other players.
+  const kind = store.kindOf(event.kind);
+  // Only entries this user has in their lists; a player's own NPCs don't concern the GM or the other players.
   const entry = store.getEntry(kind, event.id ?? event.faceId);
   if (!entry) return;
-  const places = kind === "places";
+  const texts = NOTIFY[kind];
   const by = escapeHTML(game.users.get(userId)?.name ?? "");
   const name = escapeHTML(entry.name);
   if (event.type === "created") {
-    if (!entry.knownBy) ui.notifications.info(t(places ? "NotifyPlaceCreated" : "NotifyCreated", { name }));
+    if (!entry.knownBy) ui.notifications.info(t(texts.created, { name }));
   } else if (event.type === "known") {
     // Something some players knew was shared with the whole party: new for everyone who didn't have it. When a player
     // shared it, the GM hears about it too, and everyone is told who it was.
@@ -119,13 +143,13 @@ function notifyChange(event, userId) {
     const before = Array.isArray(event.before) ? event.before : [];
     const sharer = game.users.get(event.sharedBy);
     const byPlayer = !!sharer && !sharer.isGM;
-    const sharedText = () => t(places ? "NotifyPlaceSharedBy" : "NotifySharedBy", { name, by: escapeHTML(sharer.name) });
+    const sharedText = () => t(texts.sharedBy, { name, by: escapeHTML(sharer.name) });
     if (game.user.isGM) {
       if (byPlayer) ui.notifications.info(sharedText());
     } else if (!before.includes(game.user.id)) {
-      ui.notifications.info(byPlayer ? sharedText() : t(places ? "NotifyPlaceCreated" : "NotifyCreated", { name }));
+      ui.notifications.info(byPlayer ? sharedText() : t(texts.created, { name }));
     }
-  } else if (event.type === "image") ui.notifications.info(t(places ? "NotifyPicture" : "NotifyPortrait", { name }));
+  } else if (event.type === "image") ui.notifications.info(t(texts.image, { name }));
   else if (event.type === "note") {
     // Only tell the players the note was meant for.
     const mine = !event.sharedWith?.length || event.sharedWith.includes(game.user.id);
@@ -145,7 +169,8 @@ Hooks.once("init", () => {
   registerPlaceHooks();
   registerNameplateHooks();
   foundry.applications.handlebars.loadTemplates([
-    `${TEMPLATE_PATH}/visibility.hbs`, `${TEMPLATE_PATH}/notes.hbs`, `${TEMPLATE_PATH}/portrait.hbs`
+    `${TEMPLATE_PATH}/visibility.hbs`, `${TEMPLATE_PATH}/notes.hbs`, `${TEMPLATE_PATH}/portrait.hbs`,
+    `${TEMPLATE_PATH}/link-list.hbs`
   ]);
 });
 
@@ -203,7 +228,35 @@ Hooks.once("ready", async () => {
       linkFace: store.linkFace,
       unlinkFace: store.unlinkFace,
       facesOfPlace: id => store.facesOfPlace(store.getPlace(id)).map(found => found.face),
-      placesOfFace: id => store.placesOfFace(store.getFace(id)).map(found => found.place)
+      placesOfFace: id => store.placesOfFace(store.getFace(id)).map(found => found.place),
+      // Factions
+      openFactions: async () => {
+        await game.settings.set(MODULE_ID, "activeList", "factions");
+        ui.familiarfaces?.activate();
+        ui.familiarfaces?.render({ parts: ["tabs", "header", "filters", "list", "footer"] });
+      },
+      openFaction: id => FactionSheet.open(id),
+      addFaction: prefill => addFactionDialog(prefill),
+      bindFactionImage: (src, options) => bindImageDialog(src, { ...options, kind: "factions" }),
+      factions: () => store.allFactions(),
+      getFaction: store.getFaction,
+      findFactionByName: store.findFactionByName,
+      createFaction: store.createFaction,
+      updateFaction: store.updateFaction,
+      shareFactionWithParty: store.shareFactionWithParty,
+      forgetFaction: store.forgetFaction,
+      setFactionImage: store.setFactionImage,
+      deleteFaction: store.deleteFaction,
+      factionNotes: store.factionNotesFor,
+      addFactionNote: store.addFactionNote,
+      linkToFaction: store.linkToFaction,
+      unlinkFromFaction: store.unlinkFromFaction,
+      setFactionRole: store.setFactionRole,
+      membersOfFaction: id => store.membersOfFaction(store.getFaction(id), "faces").map(({ entry, link }) => ({ face: entry, role: link.role })),
+      placesOfFaction: id => store.membersOfFaction(store.getFaction(id), "places").map(({ entry, link }) => ({ place: entry, role: link.role })),
+      factionsOf: (kind, id) => store.factionsOf(store.getEntry(kind, id)).map(({ faction, link }) => ({ faction, role: link.role })),
+      // Dxcufgb's Quest log: the links a new note would get
+      linkQuestLog: text => linkMentions(text, questLogTargets())
     };
   } catch (err) {
     console.error(`${MODULE_ID} | ready`, err);
@@ -243,6 +296,16 @@ Hooks.on("renderJournalDirectory", (app, html) => {
     for (const id of store.storeIds()) root?.querySelector(`[data-entry-id="${id}"]`)?.remove();
   } catch (err) {
     console.error(`${MODULE_ID} | renderJournalDirectory`, err);
+  }
+});
+
+// Quest log changes: the notes' @Quest / @Reward / @PartyNote links show the current names.
+Hooks.on("updateJournalEntry", doc => {
+  try {
+    if (!game.modules.get(QUEST_LOG_ID)?.active) return;
+    if (doc.getFlag(QUEST_LOG_ID, "store")) EntrySheet.refreshAll();
+  } catch (err) {
+    console.error(`${MODULE_ID} | quest log refresh`, err);
   }
 });
 
