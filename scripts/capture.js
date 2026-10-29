@@ -503,9 +503,12 @@ function onImageContextMenu(event) {
   ]);
 }
 
-/** Registered at ready, so other modules' init-time listeners (the Quest log's) get the event first. */
+/**
+ * Registered at ready on document, the same target as the Quest log's init-time listener, so its listener gets the
+ * event first (a capture listener on window would run before every listener on document).
+ */
 export function registerPointerMenus() {
-  window.addEventListener("contextmenu", onImageContextMenu, true);
-  window.addEventListener("contextmenu", onSelectionContextMenu, true);
+  document.addEventListener("contextmenu", onImageContextMenu, true);
+  document.addEventListener("contextmenu", onSelectionContextMenu, true);
   watchQuestLogMenu();
 }

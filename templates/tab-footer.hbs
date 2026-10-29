@@ -1,5 +1,5 @@
-{{#if canAddMet}}
-<footer class="dxff-tab-footer">
+<footer class="dxff-tab-footer"{{#unless canAddMet}} hidden{{/unless}}>
+  {{#if canAddMet}}
   {{#if metBlocked}}
   <span class="dxff-add-blocked dxff-add-met-wrap" data-tooltip="DXFF.InCombat">
     <button type="button" class="dxff-add-met" disabled><i class="fa-solid fa-swords" inert></i> {{localize "DXFF.AddMet"}}</button>
@@ -9,5 +9,5 @@
     <i class="fa-solid fa-user-plus" inert></i> {{localize "DXFF.AddMet"}}
   </button>
   {{/if}}
+  {{/if}}
 </footer>
-{{/if}}
