@@ -11,7 +11,7 @@
       {{selectOptions sortOptions selected=sortBy}}
     </select>
   </label>
-  <span class="dxff-total" data-tooltip="DXFF.CountHint">
-    {{#if searching}}{{shown}}/{{/if}}{{total}} <i class="fa-solid fa-masks-theater" inert></i>
+  <span class="dxff-total" data-tooltip="{{countHint}}">
+    {{#if searching}}{{shown}}/{{/if}}{{total}} <i class="{{totalIcon}}" inert></i>
   </span>
 </div>

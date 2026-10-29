@@ -2,11 +2,11 @@
   {{#if canAddMet}}
   {{#if metBlocked}}
   <span class="dxff-add-blocked dxff-add-met-wrap" data-tooltip="DXFF.InCombat">
-    <button type="button" class="dxff-add-met" disabled><i class="fa-solid fa-swords" inert></i> {{localize "DXFF.AddMet"}}</button>
+    <button type="button" class="dxff-add-met" disabled><i class="fa-solid fa-swords" inert></i> {{metLabel}}</button>
   </span>
   {{else}}
-  <button type="button" class="dxff-add-met" data-action="addMet" data-tooltip="DXFF.AddMetHint">
-    <i class="fa-solid fa-user-plus" inert></i> {{localize "DXFF.AddMet"}}
+  <button type="button" class="dxff-add-met" data-action="addMet" data-tooltip="{{metHint}}">
+    <i class="{{metIcon}}" inert></i> {{metLabel}}
   </button>
   {{/if}}
   {{/if}}

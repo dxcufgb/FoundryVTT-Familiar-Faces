@@ -137,7 +137,14 @@ export function urlFromDrop(event) {
   return null;
 }
 
-/** The image of a dropped Foundry document (actor portrait, item, tile, image journal page), if any. */
+/** A picture of a scene: its background image (not a video), else its thumbnail. */
+export function sceneImage(scene) {
+  const bg = scene?.background?.src;
+  if (bg && !/\.(webm|mp4|m4v|ogv)(\?|$)/i.test(bg)) return bg;
+  return scene?.thumb ?? "";
+}
+
+/** The image of a dropped Foundry document (actor portrait, item, tile, scene, image journal page), if any. */
 export async function imageFromDropData(data) {
   if (!data) return null;
   if (data.type === "Tile" && data.texture?.src) return data.texture.src;
@@ -146,6 +153,7 @@ export async function imageFromDropData(data) {
   if (!doc) return null;
   if (doc.documentName === "JournalEntryPage") return doc.type === "image" ? doc.src : null;
   if (doc.documentName === "Tile" || doc.documentName === "Token") return doc.texture?.src ?? null;
+  if (doc.documentName === "Scene") return sceneImage(doc) || null;
   return doc.img ?? null;
 }
 

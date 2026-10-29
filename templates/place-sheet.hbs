@@ -1,0 +1,102 @@
+<div class="dxff-sheet-scroll">
+  {{#if missing}}
+  <div class="dxff-empty">
+    <i class="fa-solid fa-ghost" inert></i>
+    <p>{{goneText}}</p>
+  </div>
+  {{else}}
+  <section class="dxff-profile">
+    {{> "modules/dxcufgbs-familiar-faces/templates/portrait.hbs"}}
+
+    <div class="dxff-profile-body">
+      {{#if editing}}
+      <form class="dxff-face-edit" autocomplete="off">
+        <div class="form-group stacked">
+          <label>{{localize "DXFF.Field.PlaceName"}}</label>
+          <input type="text" data-bind="draft.name" value="{{draft.name}}" maxlength="120" required>
+        </div>
+        <div class="form-group stacked">
+          <label>{{localize "DXFF.Field.Region"}}</label>
+          <input type="text" data-bind="draft.region" value="{{draft.region}}" list="{{appId}}-regions" maxlength="120"
+                 placeholder="{{localize "DXFF.Placeholder.Region"}}">
+        </div>
+        <div class="form-group stacked">
+          <label>{{localize "DXFF.Field.PlaceInfo"}}</label>
+          <textarea data-bind="draft.info" rows="5" data-drop="text" placeholder="{{localize "DXFF.Placeholder.PlaceInfo"}}">{{draft.info}}</textarea>
+          <p class="dxff-hint">{{localize "DXFF.InfoHint"}}</p>
+        </div>
+        <footer class="dxff-form-footer">
+          <button type="button" data-action="cancelEdit"><i class="fa-solid fa-xmark" inert></i> {{localize "DXFF.Cancel"}}</button>
+          <button type="submit" class="dxff-primary"><i class="fa-solid fa-check" inert></i> {{localize "DXFF.Save"}}</button>
+        </footer>
+      </form>
+      {{else}}
+      <h2 class="dxff-name">{{entry.name}}</h2>
+      <dl class="dxff-facts">
+        {{#if entry.region}}
+        <div><dt><i class="fa-solid fa-map" inert></i> {{localize "DXFF.Field.Region"}}</dt>
+          <dd>{{#if regionPlaceId}}<a class="dxff-link" data-action="openPlace" data-place-id="{{regionPlaceId}}"
+                data-tooltip="DXFF.OpenPlace">{{entry.region}}</a>{{else}}{{entry.region}}{{/if}}</dd></div>
+        {{/if}}
+        {{#if placesHere.length}}
+        <div><dt><i class="fa-solid fa-sitemap" inert></i> {{localize "DXFF.PlacesHere"}}</dt>
+          <dd>{{#each placesHere}}<a class="dxff-link" data-action="openPlace" data-place-id="{{id}}">{{name}}</a>{{#unless @last}}, {{/unless}}{{/each}}</dd></div>
+        {{/if}}
+        {{#if sceneName}}
+        <div><dt><i class="fa-solid fa-map-location-dot" inert></i> {{localize "DXFF.Scene"}}</dt>
+          <dd>{{#if canViewScene}}<a class="dxff-link" data-action="viewScene" data-tooltip="DXFF.ViewScene">{{sceneName}}</a>{{else}}{{sceneName}}{{/if}}</dd></div>
+        {{/if}}
+        {{#if sourceHTML}}
+        <div><dt><i class="fa-solid fa-book-open" inert></i> {{localize "DXFF.Source"}}</dt><dd>{{{sourceHTML}}}</dd></div>
+        {{/if}}
+        <div><dt><i class="fa-solid fa-calendar-plus" inert></i> {{localize "DXFF.AddedOn"}}</dt><dd>{{added}}{{#if addedBy}} · {{addedBy}}{{/if}}</dd></div>
+        {{#if knownBy}}
+        <div><dt><i class="fa-solid fa-user-lock" inert></i> {{localize "DXFF.KnownByLabel"}}</dt><dd>{{knownBy}}</dd></div>
+        {{/if}}
+      </dl>
+      {{#if infoHTML}}<div class="dxff-info">{{{infoHTML}}}</div>{{/if}}
+      {{#if hasActions}}
+      <div class="dxff-profile-actions">
+        {{#if canEdit}}<button type="button" data-action="editFace"><i class="fa-solid fa-pen" inert></i> {{localize "DXFF.Edit"}}</button>{{/if}}
+        {{#if canShare}}<button type="button" data-action="shareFace" data-tooltip="{{texts.shareHint}}"><i class="fa-solid fa-users" inert></i> {{texts.share}}</button>{{/if}}
+        {{#if canForget}}<button type="button" class="dxff-danger" data-action="forgetFace"><i class="{{texts.forgetIcon}}" inert></i> {{texts.forget}}</button>{{/if}}
+        {{#if canDelete}}<button type="button" class="dxff-danger" data-action="deleteFace"><i class="fa-solid fa-trash" inert></i> {{texts.remove}}</button>{{/if}}
+      </div>
+      {{/if}}
+      {{/if}}
+    </div>
+  </section>
+
+  <datalist id="{{appId}}-regions">
+    {{#each regionOptions}}<option value="{{this}}"></option>{{/each}}
+  </datalist>
+
+  <section class="dxff-links">
+    <header class="dxff-links-header">
+      <h3><i class="fa-solid fa-masks-theater" inert></i> {{localize "DXFF.PeopleHere"}} <span class="dxff-count">{{people.length}}</span></h3>
+      {{#if canLinkFace}}
+      <button type="button" class="dxff-icon-btn" data-action="linkFace" data-tooltip="DXFF.LinkFaceHint"
+              aria-label="{{localize "DXFF.LinkFace"}}"><i class="fa-solid fa-link" inert></i></button>
+      {{/if}}
+    </header>
+    <ul class="dxff-link-list">
+      {{#each people}}
+      <li class="dxff-link-item" data-face-id="{{id}}">
+        <button type="button" class="dxff-link-open" data-action="openFace" data-tooltip="{{why}}">
+          <span class="dxff-avatar" style="--hue: {{hue}}">{{#if img}}<img src="{{img}}" alt="" loading="lazy">{{else}}<span>{{initials}}</span>{{/if}}</span>
+          <span class="dxff-link-name">{{name}}</span>
+        </button>
+        {{#if canUnlink}}
+        <button type="button" class="dxff-icon-btn dxff-danger" data-action="unlinkFace" data-tooltip="DXFF.Unlink"
+                aria-label="{{localize "DXFF.Unlink"}}"><i class="fa-solid fa-link-slash" inert></i></button>
+        {{/if}}
+      </li>
+      {{else}}
+      <li class="dxff-no-notes">{{localize "DXFF.NoPeopleHere"}}</li>
+      {{/each}}
+    </ul>
+  </section>
+
+  {{> "modules/dxcufgbs-familiar-faces/templates/notes.hbs"}}
+  {{/if}}
+</div>

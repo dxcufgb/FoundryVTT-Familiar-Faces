@@ -1,0 +1,30 @@
+<div class="dxff-portrait {{#if isPlace}}dxff-portrait-place{{/if}} {{#unless entry.img}}empty{{/unless}}" style="--hue: {{hue}}"
+     {{#if isGM}}data-drop="portrait" tabindex="0" data-tooltip="{{pic.drop}}"{{/if}}>
+  {{#if entry.img}}
+  <img src="{{entry.img}}" alt="{{entry.name}}" data-action="viewPortrait">
+  {{else}}
+  <span class="dxff-portrait-initials">{{initials}}</span>
+  {{/if}}
+  {{#if canPickPlaceholder}}
+  <div class="dxff-portrait-tools">
+    <button type="button" class="dxff-icon-btn" data-action="pickPlaceholder" data-tooltip="{{pic.pickHint}}"
+            aria-label="{{pic.pick}}"><i class="fa-solid {{#if isPlace}}fa-map{{else}}fa-masks-theater{{/if}}" inert></i></button>
+    {{#if isGM}}
+    {{#if canBrowse}}
+    <button type="button" class="dxff-icon-btn" data-action="browsePortrait" data-tooltip="{{pic.browse}}"
+            aria-label="{{pic.browse}}"><i class="fa-solid fa-folder-open" inert></i></button>
+    {{/if}}
+    {{#if canUpload}}
+    <button type="button" class="dxff-icon-btn" data-action="uploadPortrait" data-tooltip="{{pic.upload}}"
+            aria-label="{{pic.upload}}"><i class="fa-solid fa-upload" inert></i></button>
+    {{/if}}
+    {{#if entry.img}}
+    <button type="button" class="dxff-icon-btn" data-action="showPortrait" data-tooltip="{{pic.show}}"
+            aria-label="{{pic.show}}"><i class="fa-solid fa-eye" inert></i></button>
+    <button type="button" class="dxff-icon-btn dxff-danger" data-action="removePortrait" data-tooltip="{{pic.remove}}"
+            aria-label="{{pic.remove}}"><i class="fa-solid fa-trash" inert></i></button>
+    {{/if}}
+    {{/if}}
+  </div>
+  {{/if}}
+</div>

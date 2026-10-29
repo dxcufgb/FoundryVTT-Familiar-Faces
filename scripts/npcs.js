@@ -93,7 +93,7 @@ export async function addMetFaceDialog() {
   if (!store.ready()) return ui.notifications.warn(t("NotReady"));
   if (combatBlocks()) return ui.notifications.warn(t("InCombat"));
   const id = `dxff-met-${randomId()}`;
-  const places = placeSuggestions(store.allFaces().map(f => f.metAt));
+  const places = placeSuggestions([...store.allFaces().map(f => f.metAt), ...store.allPlaces().map(p => p.name)]);
   const content = `
     <div class="dxff dxff-add-face">
       <p class="hint">${escapeHTML(t("AddMetIntro"))}</p>
