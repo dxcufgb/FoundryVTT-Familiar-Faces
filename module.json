@@ -2,7 +2,7 @@
   "id": "dxcufgbs-familiar-faces",
   "title": "Dxcufgb's Familiar Faces",
   "description": "A sidebar tab of everyone the party has met. The GM adds NPCs from the journals (select a name and right-click it, or right-click a journal or page), from the Actors directory or from an NPC's token, and gives them portraits by right-clicking journal images. Players add the NPCs they meet to their own list by right-clicking a token, and keep notes about each NPC with where they met them: private, shared with the party, or with chosen players. Search everyone, group them by the place they were met, and use it alongside Dxcufgb's Quest log.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "authors": [
     {
       "name": "Dxcufgb",

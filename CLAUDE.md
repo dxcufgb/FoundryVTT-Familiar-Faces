@@ -45,7 +45,7 @@ System-agnostic. No build step and no npm dependencies.
   Players get the token's image instead of the actor portrait when the token name differs from the actor's (disguise).
 - `scripts/capture.js` – the *Add face* dialog, the *Add image to NPC* search dialog, the Journal directory / page
   context menu hooks, and our own small right-click menu for a selected name and for journal images (capture-phase
-  `contextmenu` listeners on `window`, registered at **ready**). When Dxcufgb's Quest log is active its selection
+  `contextmenu` listeners on `document`, registered at **ready**). When Dxcufgb's Quest log is active its selection
   menu (registered at init) wins the event; a MutationObserver adds our items to `#dxql-context-menu` instead.
 - `scripts/images.js` – portrait upload (direct only; GMs / FILES_UPLOAD), file picker, image from drop data,
   ImagePopout show / share.

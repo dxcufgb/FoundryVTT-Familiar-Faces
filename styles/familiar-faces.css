@@ -240,6 +240,7 @@
   padding: 6px 8px 8px;
   border-top: 1px solid var(--dxff-border);
 }
+.dxff-tab .dxff-tab-footer[hidden] { display: none; }
 .dxff-tab .dxff-tab-footer .dxff-add-met,
 .dxff-tab .dxff-tab-footer .dxff-add-met-wrap { width: 100%; }
 
