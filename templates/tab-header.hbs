@@ -1,16 +1,16 @@
 <header class="dxff-tab-header">
   <div class="dxff-search">
     <i class="fa-solid fa-magnifying-glass" inert></i>
-    <input type="search" name="search" value="{{search}}" placeholder="{{localize "DXFF.SearchPlaceholder"}}"
-           aria-label="{{localize "DXFF.Search"}}" autocomplete="off">
+    <input type="search" name="search" value="{{search}}" placeholder="{{searchPlaceholder}}"
+           aria-label="{{searchLabel}}" autocomplete="off">
   </div>
   {{#if canAdd}}
-  <button type="button" class="dxff-add-face" data-action="addFace" data-tooltip="DXFF.AddFaceHint">
-    <i class="fa-solid fa-user-plus" inert></i> {{localize "DXFF.AddFace"}}
+  <button type="button" class="dxff-add-face" data-action="addFace" data-tooltip="{{addHint}}">
+    <i class="{{addIcon}}" inert></i> {{addLabel}}
   </button>
   {{else if addBlocked}}
   <span class="dxff-add-blocked" data-tooltip="DXFF.InCombat">
-    <button type="button" class="dxff-add-face" disabled><i class="fa-solid fa-swords" inert></i> {{localize "DXFF.AddFace"}}</button>
+    <button type="button" class="dxff-add-face" disabled><i class="fa-solid fa-swords" inert></i> {{addLabel}}</button>
   </span>
   {{/if}}
 </header>

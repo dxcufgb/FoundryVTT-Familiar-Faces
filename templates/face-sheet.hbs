@@ -2,40 +2,11 @@
   {{#if missing}}
   <div class="dxff-empty">
     <i class="fa-solid fa-ghost" inert></i>
-    <p>{{localize "DXFF.FaceGone"}}</p>
+    <p>{{goneText}}</p>
   </div>
   {{else}}
   <section class="dxff-profile">
-    <div class="dxff-portrait {{#unless face.img}}empty{{/unless}}" style="--hue: {{hue}}"
-         {{#if isGM}}data-drop="portrait" tabindex="0" data-tooltip="DXFF.PortraitDropHint"{{/if}}>
-      {{#if face.img}}
-      <img src="{{face.img}}" alt="{{face.name}}" data-action="viewPortrait">
-      {{else}}
-      <span class="dxff-portrait-initials">{{initials}}</span>
-      {{/if}}
-      {{#if canPickPlaceholder}}
-      <div class="dxff-portrait-tools">
-        <button type="button" class="dxff-icon-btn" data-action="pickPlaceholder" data-tooltip="DXFF.PickLookHint"
-                aria-label="{{localize "DXFF.PickLook"}}"><i class="fa-solid fa-masks-theater" inert></i></button>
-        {{#if isGM}}
-        {{#if canBrowse}}
-        <button type="button" class="dxff-icon-btn" data-action="browsePortrait" data-tooltip="DXFF.BrowsePortrait"
-                aria-label="{{localize "DXFF.BrowsePortrait"}}"><i class="fa-solid fa-folder-open" inert></i></button>
-        {{/if}}
-        {{#if canUpload}}
-        <button type="button" class="dxff-icon-btn" data-action="uploadPortrait" data-tooltip="DXFF.UploadPortrait"
-                aria-label="{{localize "DXFF.UploadPortrait"}}"><i class="fa-solid fa-upload" inert></i></button>
-        {{/if}}
-        {{#if face.img}}
-        <button type="button" class="dxff-icon-btn" data-action="showPortrait" data-tooltip="DXFF.ShowPortrait"
-                aria-label="{{localize "DXFF.ShowPortrait"}}"><i class="fa-solid fa-eye" inert></i></button>
-        <button type="button" class="dxff-icon-btn dxff-danger" data-action="removePortrait" data-tooltip="DXFF.RemovePortrait"
-                aria-label="{{localize "DXFF.RemovePortrait"}}"><i class="fa-solid fa-trash" inert></i></button>
-        {{/if}}
-        {{/if}}
-      </div>
-      {{/if}}
-    </div>
+    {{> "modules/dxcufgbs-familiar-faces/templates/portrait.hbs"}}
 
     <div class="dxff-profile-body">
       {{#if editing}}
@@ -50,7 +21,7 @@
             <input type="text" data-bind="draft.metAt" value="{{draft.metAt}}" list="{{appId}}-places" maxlength="120"
                    placeholder="{{localize "DXFF.Placeholder.MetAt"}}">
             {{#if currentScene}}
-            <button type="button" class="dxff-icon-btn" data-action="useScene" data-scope="draft"
+            <button type="button" class="dxff-icon-btn" data-action="useScene" data-scope="draft" data-field="metAt"
                     data-tooltip="{{localize "DXFF.UseScene" scene=currentScene}}"><i class="fa-solid fa-map-location-dot" inert></i></button>
             {{/if}}
           </div>
@@ -66,10 +37,12 @@
         </footer>
       </form>
       {{else}}
-      <h2 class="dxff-name">{{face.name}}</h2>
+      <h2 class="dxff-name">{{entry.name}}</h2>
       <dl class="dxff-facts">
-        {{#if face.metAt}}
-        <div><dt><i class="fa-solid fa-location-dot" inert></i> {{localize "DXFF.Field.MetAt"}}</dt><dd>{{face.metAt}}</dd></div>
+        {{#if entry.metAt}}
+        <div><dt><i class="fa-solid fa-location-dot" inert></i> {{localize "DXFF.Field.MetAt"}}</dt>
+          <dd>{{#if metAtPlaceId}}<a class="dxff-link" data-action="openPlace" data-place-id="{{metAtPlaceId}}"
+                data-tooltip="DXFF.OpenPlace">{{entry.metAt}}</a>{{else}}{{entry.metAt}}{{/if}}</dd></div>
         {{/if}}
         {{#if sourceHTML}}
         <div><dt><i class="fa-solid fa-book-open" inert></i> {{localize "DXFF.Source"}}</dt><dd>{{{sourceHTML}}}</dd></div>
@@ -83,9 +56,9 @@
       {{#if hasActions}}
       <div class="dxff-profile-actions">
         {{#if canEdit}}<button type="button" data-action="editFace"><i class="fa-solid fa-pen" inert></i> {{localize "DXFF.Edit"}}</button>{{/if}}
-        {{#if canShare}}<button type="button" data-action="shareFace" data-tooltip="DXFF.ShareWithPartyHint"><i class="fa-solid fa-users" inert></i> {{localize "DXFF.ShareWithParty"}}</button>{{/if}}
-        {{#if canForget}}<button type="button" class="dxff-danger" data-action="forgetFace"><i class="fa-solid fa-user-minus" inert></i> {{localize "DXFF.ForgetFace"}}</button>{{/if}}
-        {{#if canDelete}}<button type="button" class="dxff-danger" data-action="deleteFace"><i class="fa-solid fa-trash" inert></i> {{localize "DXFF.DeleteFace"}}</button>{{/if}}
+        {{#if canShare}}<button type="button" data-action="shareFace" data-tooltip="{{texts.shareHint}}"><i class="fa-solid fa-users" inert></i> {{texts.share}}</button>{{/if}}
+        {{#if canForget}}<button type="button" class="dxff-danger" data-action="forgetFace"><i class="{{texts.forgetIcon}}" inert></i> {{texts.forget}}</button>{{/if}}
+        {{#if canDelete}}<button type="button" class="dxff-danger" data-action="deleteFace"><i class="fa-solid fa-trash" inert></i> {{texts.remove}}</button>{{/if}}
       </div>
       {{/if}}
       {{/if}}
@@ -96,82 +69,34 @@
     {{#each placeOptions}}<option value="{{this}}"></option>{{/each}}
   </datalist>
 
-  <section class="dxff-notes">
-    <header class="dxff-notes-header">
-      <h3><i class="fa-solid fa-feather" inert></i> {{localize "DXFF.Notes"}}</h3>
-      <nav class="dxff-pills" aria-label="{{localize "DXFF.NoteFilterLabel"}}">
-        {{#each noteFilters}}
-        <button type="button" class="{{#if active}}active{{/if}}" data-action="setNoteFilter" data-filter="{{id}}"
-                aria-pressed="{{#if active}}true{{else}}false{{/if}}">{{label}} <span class="dxff-count">{{count}}</span></button>
-        {{/each}}
-      </nav>
+  {{#if showPlaces}}
+  <section class="dxff-links">
+    <header class="dxff-links-header">
+      <h3><i class="fa-solid fa-map-location-dot" inert></i> {{localize "DXFF.PlacesOfFace"}}</h3>
+      {{#if canLinkPlace}}
+      <button type="button" class="dxff-icon-btn" data-action="linkPlace" data-tooltip="DXFF.LinkPlaceHint"
+              aria-label="{{localize "DXFF.LinkPlace"}}"><i class="fa-solid fa-link" inert></i></button>
+      {{/if}}
     </header>
-
-    <div class="dxff-composer" data-note-form>
-      <div class="dxff-with-btn dxff-place-input">
-        <i class="fa-solid fa-location-dot" inert></i>
-        <input type="text" data-bind="composer.place" data-keys="place" value="{{composer.place}}" list="{{appId}}-places"
-               maxlength="120" placeholder="{{localize "DXFF.Placeholder.Place"}}" aria-label="{{localize "DXFF.Field.Place"}}">
-        {{#if currentScene}}
-        <button type="button" class="dxff-icon-btn" data-action="useScene" data-scope="composer"
-                data-tooltip="{{localize "DXFF.UseScene" scene=currentScene}}"><i class="fa-solid fa-map-location-dot" inert></i></button>
-        {{/if}}
-      </div>
-      <textarea data-bind="composer.text" data-keys="composer" data-drop="text" rows="3"
-                placeholder="{{localize "DXFF.Placeholder.Note"}}" aria-label="{{localize "DXFF.Field.Note"}}">{{composer.text}}</textarea>
-      {{> "modules/dxcufgbs-familiar-faces/templates/visibility.hbs" composer}}
-      {{#if composerBlocked}}<p class="dxff-hint dxff-warn"><i class="fa-solid fa-triangle-exclamation" inert></i> {{localize "DXFF.PrivateNotReady"}}</p>{{/if}}
-      <footer class="dxff-form-footer">
-        <span class="dxff-hint">{{localize "DXFF.CtrlEnter"}}</span>
-        <button type="button" class="dxff-primary" data-action="postNote"><i class="fa-solid fa-feather-pointed" inert></i> {{localize "DXFF.AddNote"}}</button>
-      </footer>
-    </div>
-
-    <ol class="dxff-note-list">
-      {{#each notes}}
-      <li class="dxff-note vis-{{visibility}} {{#if mine}}mine{{/if}}" data-note-id="{{id}}" data-where="{{where}}" style="--user-color: {{author.color}}">
-        {{#if editing}}
-        <div class="dxff-note-edit" data-note-form>
-          <div class="dxff-with-btn dxff-place-input">
-            <i class="fa-solid fa-location-dot" inert></i>
-            <input type="text" data-bind="editNote.place" data-keys="place" value="{{edit.place}}" list="{{@root.appId}}-places"
-                   maxlength="120" placeholder="{{localize "DXFF.Placeholder.Place"}}" aria-label="{{localize "DXFF.Field.Place"}}">
-            {{#if @root.currentScene}}
-            <button type="button" class="dxff-icon-btn" data-action="useScene" data-scope="edit"
-                    data-tooltip="{{localize "DXFF.UseScene" scene=@root.currentScene}}"><i class="fa-solid fa-map-location-dot" inert></i></button>
-            {{/if}}
-          </div>
-          <textarea data-bind="editNote.text" data-keys="edit" data-drop="text" rows="4" aria-label="{{localize "DXFF.Field.Note"}}">{{edit.text}}</textarea>
-          {{> "modules/dxcufgbs-familiar-faces/templates/visibility.hbs" edit}}
-          <footer class="dxff-form-footer">
-            <span class="dxff-hint">{{localize "DXFF.CtrlEnterSave"}}</span>
-            <button type="button" data-action="cancelNote"><i class="fa-solid fa-xmark" inert></i> {{localize "DXFF.Cancel"}}</button>
-            <button type="button" class="dxff-primary" data-action="saveNote"><i class="fa-solid fa-check" inert></i> {{localize "DXFF.Save"}}</button>
-          </footer>
-        </div>
-        {{else}}
-        <header class="dxff-note-head">
-          <span class="dxff-author">{{author.name}}</span>
-          <span class="dxff-vis" data-tooltip="{{visLabel}}"><i class="{{visIcon}}" inert></i> <span>{{visLabel}}</span></span>
-          <span class="dxff-date" {{#if edited}}data-tooltip="{{localize "DXFF.EditedAt" date=edited}}"{{/if}}>{{date}}{{#if edited}}*{{/if}}</span>
-          {{#if canEdit}}
-          <button type="button" class="dxff-icon-btn" data-action="editNote" data-tooltip="DXFF.EditNote"
-                  aria-label="{{localize "DXFF.EditNote"}}"><i class="fa-solid fa-pen" inert></i></button>
-          {{/if}}
-          {{#if canDelete}}
-          <button type="button" class="dxff-icon-btn dxff-danger" data-action="deleteNote" data-tooltip="DXFF.DeleteNote"
-                  aria-label="{{localize "DXFF.DeleteNote"}}"><i class="fa-solid fa-trash" inert></i></button>
-          {{/if}}
-        </header>
-        {{#if place}}<div class="dxff-note-place"><i class="fa-solid fa-location-dot" inert></i> {{place}}</div>{{/if}}
-        {{#if html}}<div class="dxff-note-text">{{{html}}}</div>{{/if}}
+    <ul class="dxff-link-list">
+      {{#each linkedPlaces}}
+      <li class="dxff-link-item" data-place-id="{{id}}">
+        <button type="button" class="dxff-link-open" data-action="openPlace" data-tooltip="{{why}}">
+          <span class="dxff-avatar dxff-square" style="--hue: {{hue}}">{{#if img}}<img src="{{img}}" alt="" loading="lazy">{{else}}<span>{{initials}}</span>{{/if}}</span>
+          <span class="dxff-link-name">{{name}}</span>
+        </button>
+        {{#if canUnlink}}
+        <button type="button" class="dxff-icon-btn dxff-danger" data-action="unlinkPlace" data-tooltip="DXFF.Unlink"
+                aria-label="{{localize "DXFF.Unlink"}}"><i class="fa-solid fa-link-slash" inert></i></button>
         {{/if}}
       </li>
       {{else}}
-      <li class="dxff-no-notes">{{#if @root.noNotes}}{{localize "DXFF.NoNotes"}}{{else}}{{localize "DXFF.NoNotesInFilter"}}{{/if}}</li>
+      <li class="dxff-no-notes">{{localize "DXFF.NoPlacesOfFace"}}</li>
       {{/each}}
-    </ol>
-    {{#if gmSeesShared}}<p class="dxff-hint dxff-footnote"><i class="fa-solid fa-circle-info" inert></i> {{localize "DXFF.GMSeesShared"}}</p>{{/if}}
+    </ul>
   </section>
+  {{/if}}
+
+  {{> "modules/dxcufgbs-familiar-faces/templates/notes.hbs"}}
   {{/if}}
 </div>

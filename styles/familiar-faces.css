@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Dxcufgb's Familiar Faces
+   Dxcufgb's Familiar Faces & Places
    ========================================================================== */
 
 /* ---------- Theme tokens (dark default, light override) ---------- */
@@ -748,3 +748,109 @@ body.theme-light #dxff-context-menu { background: #f6f1e7; }
 
 /* GM: Familiar Faces button on the token HUD of NPCs. */
 #token-hud .dxff-hud.active i { color: var(--color-warm-2, #ee9b3a); }
+
+/* ---------- Faces and places ---------- */
+/* Places have rounded squares instead of circles. */
+.dxff .dxff-avatar.dxff-square { border-radius: 8px; }
+.dxff .dxff-avatar.dxff-square img { object-position: center; }
+
+/* The Faces / Places switch at the top of the tab. */
+.dxff-tab .dxff-tabs {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  padding: 8px 8px 0;
+}
+.dxff-tab .dxff-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  height: 28px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid var(--dxff-border);
+  border-radius: var(--dxff-radius);
+  background: var(--dxff-surface);
+  color: var(--dxff-muted);
+  box-shadow: none;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dxff-tab .dxff-tab-btn:hover { background: var(--dxff-hover); color: var(--dxff-strong); }
+.dxff-tab .dxff-tab-btn.active {
+  border-color: var(--dxff-accent);
+  background: var(--dxff-accent-soft);
+  color: var(--dxff-strong);
+}
+.dxff-tab .dxff-tab-btn.active > i { color: var(--dxff-accent); }
+.dxff-tab .dxff-people-count i { color: var(--dxff-muted); }
+
+/* A place's picture is a landscape. */
+.dxff-sheet .dxff-portrait.dxff-portrait-place { width: 190px; aspect-ratio: 4 / 3; }
+.dxff-sheet .dxff-portrait.dxff-portrait-place img { object-position: center; }
+
+/* Links inside facts: open the place. */
+.dxff-sheet a.dxff-link { color: var(--dxff-accent); cursor: pointer; text-decoration: none; }
+.dxff-sheet a.dxff-link:hover { text-decoration: underline; }
+
+/* The people of a place, the places of an NPC. */
+.dxff-sheet .dxff-links { margin-top: 16px; }
+.dxff-sheet .dxff-links-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--dxff-border);
+}
+.dxff-sheet .dxff-links-header h3 {
+  flex: 1;
+  margin: 0;
+  border: 0;
+  font-size: 1.05rem;
+  color: var(--dxff-strong);
+}
+.dxff-sheet .dxff-links-header h3 i { color: var(--dxff-accent); font-size: 0.85em; }
+.dxff-sheet .dxff-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dxff-sheet .dxff-link-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 2px 4px 2px 2px;
+  border: 1px solid var(--dxff-border);
+  border-radius: 999px;
+  background: var(--dxff-surface);
+}
+.dxff-sheet .dxff-link-item:hover { border-color: var(--dxff-accent); }
+.dxff-sheet .dxff-link-open {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0 4px 0 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--dxff-text);
+  font-family: inherit;
+  cursor: pointer;
+}
+.dxff-sheet .dxff-link-open .dxff-avatar { width: 26px; height: 26px; font-size: 10px; }
+.dxff-sheet .dxff-link-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.dxff-sheet .dxff-link-item .dxff-icon-btn { width: 20px; height: 20px; font-size: 10px; }
+.dxff-sheet .dxff-link-list .dxff-no-notes { flex: 1; }

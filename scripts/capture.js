@@ -1,12 +1,13 @@
 import {
   MODULE_ID, QUEST_LOG_ID, t, escapeHTML, cleanLine, cleanName, imagesIn, imagesInPage, currentSceneName, placeSuggestions,
-  canAddFaces, mayAddFaces, combatBlocks, nameHue, initials, randomId
+  canAddFaces, canAddPlaces, mayAddFaces, combatBlocks, randomId
 } from "./util.js";
 import * as store from "./store.js";
+import { EntrySheet } from "./apps/entry-sheet.js";
 import { FaceSheet } from "./apps/face-sheet.js";
-import { tokenize } from "./search.js";
+import { PlaceSheet } from "./apps/place-sheet.js";
 import { showImage } from "./images.js";
-import { hasRealPortrait } from "./placeholders.js";
+import { entryOptionsHTML, searchBoxHTML, wireEntrySearch } from "./pickers.js";
 
 const { DialogV2 } = foundry.applications.api;
 const MAX_NAME = 80;
@@ -15,39 +16,71 @@ const JOURNAL_IMAGE_SCOPE = ".journal-entry-page, .journal-entry-content, .journ
 const EDITING = "input, textarea, select, [contenteditable=''], [contenteditable=true], prose-mirror, .editor-content, #board";
 
 /* -------------------------------------------- */
-/*  "Add to Familiar Faces" dialog              */
+/*  "Add NPC" / "Add place" dialog              */
 /* -------------------------------------------- */
 
+/** What differs between adding a face and a place (DXFF.* keys). */
+const ADD = {
+  faces: {
+    title: "AddFace", icon: "fa-solid fa-user-plus", name: "Field.Name", nameMax: MAX_NAME, where: "metAt", whereLabel: "Field.MetAt",
+    wherePlaceholder: "Placeholder.MetAt", info: "Field.Info", infoPlaceholder: "Placeholder.Info", exists: "AlreadyExists",
+    added: "Added", linkSource: "LinkSource", picture: "Portrait", noPicture: "NoPortrait"
+  },
+  places: {
+    title: "AddPlace", icon: "fa-solid fa-map-pin", name: "Field.PlaceName", nameMax: 120, where: "region", whereLabel: "Field.Region",
+    wherePlaceholder: "Placeholder.Region", info: "Field.PlaceInfo", infoPlaceholder: "Placeholder.PlaceInfo", exists: "PlaceAlreadyExists",
+    added: "PlaceAdded", linkSource: "LinkSourcePlace", picture: "Picture", noPicture: "NoPicture"
+  }
+};
+
+function canAdd(kind) {
+  return kind === "places" ? canAddPlaces() : canAddFaces();
+}
+
 /**
- * Asks for the details of a new face and creates it.
+ * Asks for the details of a new face or place and creates it.
+ * @param {"faces"|"places"} kind
  * @param {object} [prefill]
  * @param {string} [prefill.name]
- * @param {string} [prefill.img]          The portrait to preselect.
+ * @param {string} [prefill.img]          The picture to preselect.
  * @param {string[]} [prefill.images]     More images to offer (e.g. the images of the journal page).
- * @param {string} [prefill.metAt]        Defaults to the current scene.
+ * @param {string} [prefill.metAt]        Faces: defaults to the current scene.
+ * @param {string} [prefill.region]       Places: the region it is in.
  * @param {string} [prefill.info]
  * @param {{uuid: string, label: string}|null} [prefill.source]
- * @returns {Promise<string|null>} the new face's id
+ * @param {string} [prefill.scene]        Places: the uuid of its scene.
+ * @returns {Promise<string|null>} the new entry's id
  */
-export async function addFaceDialog({ name = "", img = "", images = [], metAt, info = "", source = null } = {}) {
+export async function addEntryDialog(kind, { name = "", img = "", images = [], metAt, region = "", info = "", source = null, scene = "" } = {}) {
+  kind = kind === "places" ? "places" : "faces";
+  const texts = ADD[kind];
   if (!store.ready()) {
     ui.notifications.warn(t("NotReady"));
     return null;
   }
-  if (!canAddFaces()) {
-    ui.notifications.warn(t(combatBlocks() ? "InCombat" : "CannotAdd"));
+  if (!canAdd(kind)) {
+    ui.notifications.warn(t(kind === "faces" && combatBlocks() ? "InCombat" : "CannotAdd"));
     return null;
   }
-  name = cleanName(name);
+  name = cleanName(name, texts.nameMax);
+  // A new place from the Add button: most likely where the party is now.
+  let sceneOffer = "";
+  if (kind === "places" && !name && !scene) {
+    const current = canvas?.scene ?? game.scenes?.viewed;
+    name = cleanName(currentSceneName(), texts.nameMax);
+    if (current && name) sceneOffer = current.uuid;
+  }
   const choices = [...new Set([img, ...images].filter(Boolean))].slice(0, 12);
-  const listId = `dxff-add-places-${randomId()}`;
-  const places = placeSuggestions(store.allFaces().map(f => f.metAt));
-  const place = metAt ?? currentSceneName();
+  const listId = `dxff-add-${kind}-${randomId()}`;
+  const places = kind === "faces"
+    ? placeSuggestions([...store.allFaces().map(f => f.metAt), ...store.allPlaces().map(p => p.name)])
+    : placeSuggestions([...store.allPlaces().map(p => p.region), ...store.allPlaces().map(p => p.name)]);
+  const where = kind === "faces" ? (metAt ?? currentSceneName()) : region;
 
   const imageGrid = choices.length ? `
     <fieldset class="dxff-pick-images">
-      <legend>${escapeHTML(t("Portrait"))}</legend>
-      <label class="dxff-pick-image dxff-pick-none" data-tooltip="${escapeHTML(t("NoPortrait"))}">
+      <legend>${escapeHTML(t(texts.picture))}</legend>
+      <label class="dxff-pick-image dxff-pick-none" data-tooltip="${escapeHTML(t(texts.noPicture))}">
         <input type="radio" name="img" value=""><span><i class="fa-solid fa-ban" inert></i></span>
       </label>
       ${choices.map((src, i) => `
@@ -60,30 +93,31 @@ export async function addFaceDialog({ name = "", img = "", images = [], metAt, i
     <div class="dxff dxff-add-face">
       ${source ? `<p class="dxff-source-line"><i class="fa-solid fa-link" inert></i> ${escapeHTML(t("From"))}: <b>${escapeHTML(source.label)}</b></p>` : ""}
       <div class="form-group">
-        <label for="${listId}-name">${escapeHTML(t("Field.Name"))}</label>
-        <input id="${listId}-name" type="text" name="name" value="${escapeHTML(name)}" maxlength="${MAX_NAME}" required>
+        <label for="${listId}-name">${escapeHTML(t(texts.name))}</label>
+        <input id="${listId}-name" type="text" name="name" value="${escapeHTML(name)}" maxlength="${texts.nameMax}" required>
       </div>
       <p class="dxff-dup-warning" hidden>
         <i class="fa-solid fa-triangle-exclamation" inert></i> <span></span>
         <button type="button" data-open-existing><i class="fa-solid fa-address-card" inert></i> ${escapeHTML(t("Open"))}</button>
       </p>
       <div class="form-group">
-        <label for="${listId}-met">${escapeHTML(t("Field.MetAt"))}</label>
-        <input id="${listId}-met" type="text" name="metAt" value="${escapeHTML(place)}" list="${listId}" maxlength="120"
-               placeholder="${escapeHTML(t("Placeholder.MetAt"))}">
+        <label for="${listId}-where">${escapeHTML(t(texts.whereLabel))}</label>
+        <input id="${listId}-where" type="text" name="where" value="${escapeHTML(where)}" list="${listId}" maxlength="120"
+               placeholder="${escapeHTML(t(texts.wherePlaceholder))}">
         <datalist id="${listId}">${places.map(p => `<option value="${escapeHTML(p)}"></option>`).join("")}</datalist>
       </div>
       <div class="form-group stacked">
-        <label for="${listId}-info">${escapeHTML(t("Field.Info"))}</label>
-        <textarea id="${listId}-info" name="info" rows="3" placeholder="${escapeHTML(t("Placeholder.Info"))}">${escapeHTML(info)}</textarea>
+        <label for="${listId}-info">${escapeHTML(t(texts.info))}</label>
+        <textarea id="${listId}-info" name="info" rows="3" placeholder="${escapeHTML(t(texts.infoPlaceholder))}">${escapeHTML(info)}</textarea>
         <p class="hint">${escapeHTML(t("InfoHint"))}</p>
       </div>
       ${imageGrid}
-      ${source ? `<label class="dxff-checkbox"><input type="checkbox" name="linkSource" checked> ${escapeHTML(t("LinkSource"))}</label>` : ""}
+      ${source ? `<label class="dxff-checkbox"><input type="checkbox" name="linkSource" checked> ${escapeHTML(t(texts.linkSource))}</label>` : ""}
+      ${sceneOffer ? `<label class="dxff-checkbox"><input type="checkbox" name="linkScene" checked> ${escapeHTML(t("LinkScene", { scene: name }))}</label>` : ""}
     </div>`;
 
   const result = await DialogV2.wait({
-    window: { title: t("AddFace"), icon: "fa-solid fa-user-plus" },
+    window: { title: t(texts.title), icon: texts.icon },
     position: { width: 480 },
     classes: ["dxff-dialog"],
     content,
@@ -100,16 +134,16 @@ export async function addFaceDialog({ name = "", img = "", images = [], metAt, i
       const input = el.querySelector("input[name=name]");
       const warn = el.querySelector(".dxff-dup-warning");
       const check = () => {
-        const existing = store.findByName(input.value);
+        const existing = store.findEntryByName(kind, input.value);
         warn.hidden = !existing;
         if (!existing) return;
-        warn.querySelector("span").textContent = t("AlreadyExists", { name: existing.name });
-        warn.dataset.faceId = existing.id;
+        warn.querySelector("span").textContent = t(texts.exists, { name: existing.name });
+        warn.dataset.entryId = existing.id;
       };
       input.addEventListener("input", check);
       check();
       warn.querySelector("[data-open-existing]").addEventListener("click", () => {
-        FaceSheet.open(warn.dataset.faceId);
+        EntrySheet.openEntry(kind, warn.dataset.entryId);
         dialog.close();
       });
       input.focus();
@@ -117,20 +151,25 @@ export async function addFaceDialog({ name = "", img = "", images = [], metAt, i
     }
   });
   if (!result || result === "cancel" || typeof result !== "object") return null;
-  const finalName = cleanName(result.name);
+  const finalName = cleanName(result.name, texts.nameMax);
   if (!finalName) {
     ui.notifications.warn(t("NameRequired"));
     return null;
   }
   try {
-    const id = await store.createFace({
+    const data = {
       name: finalName,
       img: result.img ?? "",
-      metAt: result.metAt,
       info: result.info,
       source: source && result.linkSource ? source : null
-    });
-    ui.notifications.info(t("Added", { name: escapeHTML(finalName) }));
+    };
+    if (kind === "faces") data.metAt = result.where;
+    else {
+      data.region = result.where;
+      data.scene = scene || (sceneOffer && result.linkScene ? sceneOffer : "");
+    }
+    const id = await store.createEntry(kind, data);
+    ui.notifications.info(t(texts.added, { name: escapeHTML(finalName) }));
     return id;
   } catch (err) {
     ui.notifications.error(err.message);
@@ -138,114 +177,93 @@ export async function addFaceDialog({ name = "", img = "", images = [], metAt, i
   }
 }
 
+/** The Add NPC dialog (see addEntryDialog). */
+export function addFaceDialog(prefill = {}) {
+  return addEntryDialog("faces", prefill);
+}
+
+/** The Add place dialog (see addEntryDialog). */
+export function addPlaceDialog(prefill = {}) {
+  return addEntryDialog("places", prefill);
+}
+
 /* -------------------------------------------- */
-/*  "Add image to NPC" dialog                   */
+/*  "Add image to NPC / place" dialog           */
 /* -------------------------------------------- */
 
-/** The face whose full name appears in a piece of text (a page name, a caption); the longest name wins. */
-function guessFace(faces, hint) {
+const BIND = {
+  faces: {
+    title: "BindImage", button: "BindButton", hint: "BindHint", newEntry: "NewFaceWithImage", none: "NoFacesYet",
+    search: "SearchFaces", pick: "PickFace", done: "PortraitSet", icon: "fa-solid fa-image-portrait", newIcon: "fa-solid fa-user-plus"
+  },
+  places: {
+    title: "BindPlaceImage", button: "BindPlaceButton", hint: "BindPlaceHint", newEntry: "NewPlaceWithImage", none: "NoPlacesYet",
+    search: "SearchPlaces", pick: "PickPlace", done: "PictureSet", icon: "fa-solid fa-image", newIcon: "fa-solid fa-map-pin"
+  }
+};
+
+/** The face or place whose full name appears in a piece of text (a page name, a caption); the longest name wins. */
+function guessEntry(entries, hint) {
   const text = String(hint ?? "").toLowerCase();
   if (!text) return null;
-  return faces.filter(f => f.name.length > 1 && text.includes(f.name.toLowerCase()))
+  return entries.filter(e => e.name.length > 1 && text.includes(e.name.toLowerCase()))
     .sort((a, b) => b.name.length - a.name.length)[0] ?? null;
 }
 
 /**
- * GM: search the familiar faces and bind an image to one of them as its portrait.
+ * GM: search the faces (or places) and bind an image to one of them as its portrait (picture).
  * @param {string} src
  * @param {object} [options]
- * @param {string} [options.hint]     Text near the image (page name, caption), used to preselect a face.
- * @param {string} [options.name]     Name to suggest when a new face is made from the image.
+ * @param {string} [options.hint]     Text near the image (page name, caption), used to preselect one.
+ * @param {string} [options.name]     Name to suggest when a new face or place is made from the image.
  * @param {{uuid: string, label: string}|null} [options.source]
+ * @param {"faces"|"places"} [options.kind]
  */
-export async function bindImageDialog(src, { hint = "", name = "", source = null } = {}) {
+export async function bindImageDialog(src, { hint = "", name = "", source = null, kind = "faces" } = {}) {
+  kind = kind === "places" ? "places" : "faces";
+  const texts = BIND[kind];
   if (!game.user.isGM) return;
   if (!store.ready()) return ui.notifications.warn(t("NotReady"));
-  const faces = store.allFaces().sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
-  if (!faces.length) {
-    ui.notifications.info(t("NoFacesYet"));
-    return addFaceDialog({ name, img: src, source });
+  const entries = store.allEntries(kind).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+  if (!entries.length) {
+    ui.notifications.info(t(texts.none));
+    return addEntryDialog(kind, { name, img: src, source });
   }
-  const guess = guessFace(faces, hint);
-  const list = faces.map(f => `
-    <li>
-      <label class="dxff-bind-option" data-search="${escapeHTML(`${f.name} ${f.metAt}`.toLowerCase())}">
-        <input type="radio" name="faceId" value="${f.id}" ${f.id === guess?.id ? "checked" : ""}>
-        <span class="dxff-avatar" style="--hue: ${nameHue(f.name)}">${f.img ? `<img src="${escapeHTML(f.img)}" alt="">` : `<span>${escapeHTML(initials(f.name))}</span>`}</span>
-        <span class="dxff-bind-name">${escapeHTML(f.name)}${f.metAt ? `<small><i class="fa-solid fa-location-dot" inert></i> ${escapeHTML(f.metAt)}</small>` : ""}</span>
-        ${hasRealPortrait(f.img) ? `<i class="fa-solid fa-image dxff-has-portrait" data-tooltip="${escapeHTML(t("HasPortrait"))}"></i>` : ""}
-      </label>
-    </li>`).join("");
-
+  const guess = guessEntry(entries, hint);
   const content = `
     <div class="dxff dxff-bind">
       <div class="dxff-bind-preview"><img src="${escapeHTML(src)}" alt=""></div>
       <div class="dxff-bind-main">
-        <div class="dxff-search">
-          <i class="fa-solid fa-magnifying-glass" inert></i>
-          <input type="search" name="q" placeholder="${escapeHTML(t("SearchFaces"))}" autocomplete="off" aria-label="${escapeHTML(t("SearchFaces"))}">
-        </div>
-        <ol class="dxff-bind-list">${list}</ol>
-        <p class="dxff-bind-none" hidden>${escapeHTML(t("NoMatches"))}</p>
-        <p class="hint">${escapeHTML(t("BindHint"))}</p>
+        ${searchBoxHTML(t(texts.search))}
+        <ol class="dxff-bind-list">${entryOptionsHTML(entries, { checked: guess?.id ?? "", portraitMark: true })}</ol>
+        <p class="dxff-bind-none" hidden>${escapeHTML(t("NoMatchesAny"))}</p>
+        <p class="hint">${escapeHTML(t(texts.hint))}</p>
       </div>
     </div>`;
 
   const result = await DialogV2.wait({
-    window: { title: t("BindImage"), icon: "fa-solid fa-image-portrait" },
+    window: { title: t(texts.title), icon: texts.icon },
     position: { width: 560 },
     classes: ["dxff-dialog"],
     content,
     rejectClose: false,
     buttons: [
       { action: "cancel", label: t("Cancel"), icon: "fa-solid fa-xmark" },
-      { action: "new", label: t("NewFaceWithImage"), icon: "fa-solid fa-user-plus" },
+      { action: "new", label: t(texts.newEntry), icon: texts.newIcon },
       {
-        action: "bind", label: t("BindButton"), icon: "fa-solid fa-link", default: true,
-        callback: (event, button) => button.form.querySelector("input[name=faceId]:checked")?.value ?? ""
+        action: "bind", label: t(texts.button), icon: "fa-solid fa-link", default: true,
+        callback: (event, button) => button.form.querySelector("input[name=entryId]:checked")?.value ?? ""
       }
     ],
-    render: (event, dialog) => {
-      const el = dialog.element;
-      const input = el.querySelector("input[name=q]");
-      const none = el.querySelector(".dxff-bind-none");
-      const options = [...el.querySelectorAll(".dxff-bind-option")];
-      const filter = () => {
-        const terms = tokenize(input.value);
-        let shown = 0;
-        for (const opt of options) {
-          const ok = terms.every(term => opt.dataset.search.includes(term));
-          opt.closest("li").hidden = !ok;
-          if (ok) shown++;
-        }
-        none.hidden = shown > 0;
-        const checked = el.querySelector("input[name=faceId]:checked");
-        if (!checked || checked.closest("li").hidden) {
-          const first = options.find(o => !o.closest("li").hidden)?.querySelector("input");
-          if (first && terms.length) first.checked = true;
-        }
-      };
-      input.addEventListener("input", filter);
-      input.addEventListener("keydown", ev => {
-        if (ev.key === "ArrowDown") {
-          ev.preventDefault();
-          (el.querySelector("input[name=faceId]:checked") ?? options.find(o => !o.closest("li").hidden)?.querySelector("input"))?.focus();
-        }
-      });
-      for (const opt of options) {
-        opt.addEventListener("dblclick", () => el.querySelector("button[data-action=bind]")?.click());
-      }
-      el.querySelector("input[name=faceId]:checked")?.closest("li")?.scrollIntoView({ block: "nearest" });
-      input.focus();
-    }
+    render: (event, dialog) => wireEntrySearch(dialog.element, { action: "bind" })
   });
 
   if (result === null || result === undefined || result === "cancel") return;
-  if (result === "new") return addFaceDialog({ name, img: src, source });
-  const face = store.getFace(result);
-  if (!face) return ui.notifications.warn(t("PickFace"));
-  await store.setImage(face.id, src);
-  ui.notifications.info(t("PortraitSet", { name: escapeHTML(face.name) }));
+  if (result === "new") return addEntryDialog(kind, { name, img: src, source });
+  const entry = store.getEntry(kind, result);
+  if (!entry) return ui.notifications.warn(t(texts.pick));
+  await store.setEntryImage(kind, entry.id, src);
+  ui.notifications.info(t(texts.done, { name: escapeHTML(entry.name) }));
 }
 
 /* -------------------------------------------- */
@@ -283,42 +301,52 @@ function journalImages(entry) {
 /* -------------------------------------------- */
 
 const MENU_ICON = '<i class="fa-solid fa-masks-theater"></i>';
+const PLACE_ICON = '<i class="fa-solid fa-map-location-dot"></i>';
 
 export function registerContextMenus() {
   Hooks.on("getJournalEntryContextOptions", (app, options) => {
     const entry = li => game.journal.get(li.closest("[data-entry-id]")?.dataset.entryId);
+    const usable = (li, kind) => {
+      const e = entry(li);
+      return store.ready() && canAdd(kind) && !!e && !store.isStore(e) && e.testUserPermission(game.user, "OBSERVER");
+    };
+    const add = (li, kind) => {
+      const e = entry(li);
+      if (e) addEntryDialog(kind, { name: e.name, images: journalImages(e), source: { uuid: e.uuid, label: e.name } });
+    };
     options.push({
-      name: "DXFF.Ctx.AddEntry",
-      icon: MENU_ICON,
-      condition: li => {
-        const e = entry(li);
-        return store.ready() && canAddFaces() && !!e && !store.isStore(e) && e.testUserPermission(game.user, "OBSERVER");
-      },
-      callback: li => {
-        const e = entry(li);
-        if (e) addFaceDialog({ name: e.name, images: journalImages(e), source: { uuid: e.uuid, label: e.name } });
-      }
+      name: "DXFF.Ctx.AddEntry", icon: MENU_ICON,
+      condition: li => usable(li, "faces"), callback: li => add(li, "faces")
+    }, {
+      name: "DXFF.Ctx.AddEntryPlace", icon: PLACE_ICON,
+      condition: li => usable(li, "places"), callback: li => add(li, "places")
     });
   });
 
   Hooks.on("getJournalEntryPageContextOptions", (app, options) => {
     const page = li => app.document?.pages.get(li.dataset.pageId);
+    const usable = (li, kind) => store.ready() && canAdd(kind) && !store.isStore(app.document) && !!page(li)?.testUserPermission(game.user, "OBSERVER");
+    const add = (li, kind) => {
+      const p = page(li);
+      if (p) addEntryDialog(kind, { name: p.name, images: imagesInPage(p), source: { uuid: p.uuid, label: `${p.parent.name}: ${p.name}` } });
+    };
+    const imagePage = li => game.user.isGM && store.ready() && page(li)?.type === "image" && !!page(li)?.src;
+    const bind = (li, kind) => {
+      const p = page(li);
+      if (p?.src) bindImageDialog(p.src, { kind, hint: `${p.name} ${p.image?.caption ?? ""}`, name: p.name, source: { uuid: p.uuid, label: `${p.parent.name}: ${p.name}` } });
+    };
     options.push({
-      name: "DXFF.Ctx.AddPage",
-      icon: MENU_ICON,
-      condition: li => store.ready() && canAddFaces() && !store.isStore(app.document) && !!page(li)?.testUserPermission(game.user, "OBSERVER"),
-      callback: li => {
-        const p = page(li);
-        if (p) addFaceDialog({ name: p.name, images: imagesInPage(p), source: { uuid: p.uuid, label: `${p.parent.name}: ${p.name}` } });
-      }
+      name: "DXFF.Ctx.AddPage", icon: MENU_ICON,
+      condition: li => usable(li, "faces"), callback: li => add(li, "faces")
     }, {
-      name: "DXFF.Ctx.BindImage",
-      icon: '<i class="fa-solid fa-image-portrait"></i>',
-      condition: li => game.user.isGM && store.ready() && page(li)?.type === "image" && !!page(li)?.src,
-      callback: li => {
-        const p = page(li);
-        if (p?.src) bindImageDialog(p.src, { hint: `${p.name} ${p.image?.caption ?? ""}`, name: p.name, source: { uuid: p.uuid, label: `${p.parent.name}: ${p.name}` } });
-      }
+      name: "DXFF.Ctx.AddPagePlace", icon: PLACE_ICON,
+      condition: li => usable(li, "places"), callback: li => add(li, "places")
+    }, {
+      name: "DXFF.Ctx.BindImage", icon: '<i class="fa-solid fa-image-portrait"></i>',
+      condition: imagePage, callback: li => bind(li, "faces")
+    }, {
+      name: "DXFF.Ctx.BindPlaceImage", icon: '<i class="fa-solid fa-image"></i>',
+      condition: imagePage, callback: li => bind(li, "places")
     });
   });
 }
@@ -409,16 +437,26 @@ function selectionAsName(event = null) {
 function selectionItems(found) {
   const items = [];
   const existing = store.findByName(found.name);
+  const place = store.findPlaceByName(found.name);
   if (existing) items.push({ icon: "fa-solid fa-address-card", label: t("Ctx.OpenFace", { name: existing.name }), run: () => FaceSheet.open(existing.id) });
+  if (place) items.push({ icon: "fa-solid fa-map-location-dot", label: t("Ctx.OpenPlace", { name: place.name }), run: () => PlaceSheet.open(place.id) });
   if (combatBlocks()) {
     items.push({ icon: "fa-solid fa-swords", label: t("Ctx.InCombat"), run: () => ui.notifications.info(t("InCombat")) });
-    return items;
+  } else {
+    items.push({
+      icon: "fa-solid fa-user-plus",
+      label: t(existing ? "Ctx.AddNameAgain" : "Ctx.AddName", { name: found.name }),
+      run: () => addEntryDialog("faces", { name: found.name, images: found.images, source: link(found.source) })
+    });
   }
-  items.push({
-    icon: "fa-solid fa-user-plus",
-    label: t(existing ? "Ctx.AddNameAgain" : "Ctx.AddName", { name: found.name }),
-    run: () => addFaceDialog({ name: found.name, images: found.images, source: link(found.source) })
-  });
+  // Places don't wait for the fight to end.
+  if (canAddPlaces()) {
+    items.push({
+      icon: "fa-solid fa-map-pin",
+      label: t(place ? "Ctx.AddPlaceNameAgain" : "Ctx.AddPlaceName", { name: found.name }),
+      run: () => addEntryDialog("places", { name: found.name, images: found.images, source: link(found.source) })
+    });
+  }
   return items;
 }
 
@@ -498,7 +536,9 @@ function onImageContextMenu(event) {
   event.stopImmediatePropagation();
   showMenu(event.clientX, event.clientY, [
     { icon: "fa-solid fa-image-portrait", label: t("Ctx.BindImage"), run: () => bindImageDialog(src, { hint, name, source: link(source) }) },
-    { icon: "fa-solid fa-user-plus", label: t("Ctx.NewFaceWithImage"), run: () => addFaceDialog({ name, img: src, source: link(source) }) },
+    { icon: "fa-solid fa-user-plus", label: t("Ctx.NewFaceWithImage"), run: () => addEntryDialog("faces", { name, img: src, source: link(source) }) },
+    { icon: "fa-solid fa-image", label: t("Ctx.BindPlaceImage"), run: () => bindImageDialog(src, { kind: "places", hint, name, source: link(source) }) },
+    { icon: "fa-solid fa-map-pin", label: t("Ctx.NewPlaceWithImage"), run: () => addEntryDialog("places", { name, img: src, source: link(source) }) },
     { icon: "fa-solid fa-expand", label: t("Ctx.ViewImage"), run: () => showImage(src, cleanLine(name || source?.label, 80)) }
   ]);
 }

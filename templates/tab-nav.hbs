@@ -1,0 +1,8 @@
+<nav class="dxff-tabs" role="tablist" aria-label="{{localize "DXFF.Title"}}">
+  {{#each tabs}}
+  <button type="button" role="tab" class="dxff-tab-btn {{#if active}}active{{/if}}" data-action="switchTab" data-tab="{{id}}"
+          aria-selected="{{#if active}}true{{else}}false{{/if}}">
+    <i class="{{icon}}" inert></i> <span>{{label}}</span> <span class="dxff-count">{{count}}</span>
+  </button>
+  {{/each}}
+</nav>

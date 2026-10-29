@@ -1,9 +1,12 @@
 import { MODULE_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM } from "./util.js";
 import * as store from "./store.js";
-import { FacesTab, GROUP_MODES, SORT_MODES } from "./apps/faces-tab.js";
+import { FacesTab, MODES, GROUP_MODES, PLACE_GROUP_MODES, SORT_MODES } from "./apps/faces-tab.js";
+import { EntrySheet } from "./apps/entry-sheet.js";
 import { FaceSheet } from "./apps/face-sheet.js";
-import { registerContextMenus, registerPointerMenus, addFaceDialog, bindImageDialog } from "./capture.js";
+import { PlaceSheet } from "./apps/place-sheet.js";
+import { registerContextMenus, registerPointerMenus, addFaceDialog, addPlaceDialog, bindImageDialog } from "./capture.js";
 import { registerNpcHooks, registerTokenMenu, addNpcForMe, addNpcForAll, npcFromToken, npcFromActor } from "./npcs.js";
+import { registerPlaceHooks, addPlaceForAll, placeFromScene } from "./places.js";
 import { registerNameplateHooks, requestNameplateSync, syncNameplates } from "./nameplates.js";
 
 /* -------------------------------------------- */
@@ -56,13 +59,25 @@ function registerSettings() {
     scope: "client", config: false, type: String, default: "name",
     choices: Object.fromEntries(SORT_MODES.map(s => [s, s]))
   });
+  game.settings.register(MODULE_ID, "placeGroupBy", {
+    scope: "client", config: false, type: String, default: "none",
+    choices: Object.fromEntries(PLACE_GROUP_MODES.map(g => [g, g]))
+  });
+  game.settings.register(MODULE_ID, "placeSortBy", {
+    scope: "client", config: false, type: String, default: "name",
+    choices: Object.fromEntries(SORT_MODES.map(s => [s, s]))
+  });
+  game.settings.register(MODULE_ID, "activeList", {
+    scope: "client", config: false, type: String, default: "faces",
+    choices: Object.fromEntries(MODES.map(m => [m, m]))
+  });
   game.settings.register(MODULE_ID, "lastVisibility", {
     scope: "client", config: false, type: String, default: "private",
     choices: Object.fromEntries(VISIBILITY.map(v => [v, v]))
   });
 }
 
-/** Adds the Familiar Faces tab to the right sidebar, just before Game Settings. */
+/** Adds the Familiar Faces & Places tab to the right sidebar, just before Game Settings. */
 function registerSidebarTab() {
   const Sidebar = foundry.applications.sidebar.Sidebar;
   const tab = { tooltip: "DXFF.Title", icon: "fa-solid fa-masks-theater" };
@@ -79,7 +94,7 @@ function registerSidebarTab() {
 function refreshAll() {
   ui.familiarfaces?.refresh();
   ui.familiarfaces?.popout?.refresh();
-  FaceSheet.refreshAll();
+  EntrySheet.refreshAll();
 }
 
 /* -------------------------------------------- */
@@ -88,26 +103,29 @@ function refreshAll() {
 
 function notifyChange(event, userId) {
   if (!event?.type || userId === game.user.id || !game.settings.get(MODULE_ID, "notify")) return;
-  // Only faces this user has in their Familiar Faces; a player's own NPCs don't concern the GM or the other players.
-  const face = store.getFace(event.faceId);
-  if (!face) return;
+  const kind = event.kind === "places" ? "places" : "faces";
+  // Only faces and places this user has in their lists; a player's own NPCs don't concern the GM or the other players.
+  const entry = store.getEntry(kind, event.id ?? event.faceId);
+  if (!entry) return;
+  const places = kind === "places";
   const by = escapeHTML(game.users.get(userId)?.name ?? "");
-  const name = escapeHTML(face.name);
+  const name = escapeHTML(entry.name);
   if (event.type === "created") {
-    if (!face.knownBy) ui.notifications.info(t("NotifyCreated", { name }));
+    if (!entry.knownBy) ui.notifications.info(t(places ? "NotifyPlaceCreated" : "NotifyCreated", { name }));
   } else if (event.type === "known") {
-    // A face some players knew was shared with the whole party: new for everyone who didn't have it. When a player
+    // Something some players knew was shared with the whole party: new for everyone who didn't have it. When a player
     // shared it, the GM hears about it too, and everyone is told who it was.
-    if (face.knownBy) return;
+    if (entry.knownBy) return;
     const before = Array.isArray(event.before) ? event.before : [];
     const sharer = game.users.get(event.sharedBy);
     const byPlayer = !!sharer && !sharer.isGM;
+    const sharedText = () => t(places ? "NotifyPlaceSharedBy" : "NotifySharedBy", { name, by: escapeHTML(sharer.name) });
     if (game.user.isGM) {
-      if (byPlayer) ui.notifications.info(t("NotifySharedBy", { name, by: escapeHTML(sharer.name) }));
+      if (byPlayer) ui.notifications.info(sharedText());
     } else if (!before.includes(game.user.id)) {
-      ui.notifications.info(byPlayer ? t("NotifySharedBy", { name, by: escapeHTML(sharer.name) }) : t("NotifyCreated", { name }));
+      ui.notifications.info(byPlayer ? sharedText() : t(places ? "NotifyPlaceCreated" : "NotifyCreated", { name }));
     }
-  } else if (event.type === "image") ui.notifications.info(t("NotifyPortrait", { name }));
+  } else if (event.type === "image") ui.notifications.info(t(places ? "NotifyPicture" : "NotifyPortrait", { name }));
   else if (event.type === "note") {
     // Only tell the players the note was meant for.
     const mine = !event.sharedWith?.length || event.sharedWith.includes(game.user.id);
@@ -124,8 +142,11 @@ Hooks.once("init", () => {
   registerSidebarTab();
   registerContextMenus();
   registerNpcHooks();
+  registerPlaceHooks();
   registerNameplateHooks();
-  foundry.applications.handlebars.loadTemplates([`${TEMPLATE_PATH}/visibility.hbs`]);
+  foundry.applications.handlebars.loadTemplates([
+    `${TEMPLATE_PATH}/visibility.hbs`, `${TEMPLATE_PATH}/notes.hbs`, `${TEMPLATE_PATH}/portrait.hbs`
+  ]);
 });
 
 Hooks.once("ready", async () => {
@@ -157,7 +178,32 @@ Hooks.once("ready", async () => {
       deleteFace: store.deleteFace,
       notes: store.notesFor,
       addNote: store.addNote,
-      syncNameplates
+      syncNameplates,
+      // Places
+      openPlaces: async () => {
+        await game.settings.set(MODULE_ID, "activeList", "places");
+        ui.familiarfaces?.activate();
+        ui.familiarfaces?.render({ parts: ["tabs", "header", "filters", "list", "footer"] });
+      },
+      openPlace: id => PlaceSheet.open(id),
+      addPlace: prefill => addPlaceDialog(prefill),
+      bindPlaceImage: (src, options) => bindImageDialog(src, { ...options, kind: "places" }),
+      places: () => store.allPlaces(),
+      getPlace: store.getPlace,
+      findPlaceByName: store.findPlaceByName,
+      createPlace: store.createPlace,
+      updatePlace: store.updatePlace,
+      addScene: scene => addPlaceForAll(placeFromScene(scene)),
+      sharePlaceWithParty: store.sharePlaceWithParty,
+      forgetPlace: store.forgetPlace,
+      setPlaceImage: store.setPlaceImage,
+      deletePlace: store.deletePlace,
+      placeNotes: store.placeNotesFor,
+      addPlaceNote: store.addPlaceNote,
+      linkFace: store.linkFace,
+      unlinkFace: store.unlinkFace,
+      facesOfPlace: id => store.facesOfPlace(store.getPlace(id)).map(found => found.face),
+      placesOfFace: id => store.placesOfFace(store.getFace(id)).map(found => found.place)
     };
   } catch (err) {
     console.error(`${MODULE_ID} | ready`, err);
@@ -190,7 +236,7 @@ Hooks.on("userConnected", () => {
   if (isResponsibleGM()) store.ensureStores().catch(err => console.error(`${MODULE_ID} | stores`, err));
 });
 
-// Keep the storage journals out of the Journal directory; they're managed from the Familiar Faces tab.
+// Keep the storage journals out of the Journal directory; they're managed from the Familiar Faces & Places tab.
 Hooks.on("renderJournalDirectory", (app, html) => {
   try {
     const root = html instanceof HTMLElement ? html : html?.[0];
@@ -204,9 +250,9 @@ Hooks.on("renderJournalDirectory", (app, html) => {
 function onCombatChange() {
   if (game.user.isGM) return;
   for (const app of [ui.familiarfaces, ui.familiarfaces?.popout]) {
-    if (app?.rendered) app.render({ parts: ["header", "filters", "list", "footer"] });
+    if (app?.rendered) app.render({ parts: ["tabs", "header", "filters", "list", "footer"] });
   }
-  FaceSheet.refreshAll();
+  EntrySheet.refreshAll();
 }
 Hooks.on("combatStart", onCombatChange);
 Hooks.on("deleteCombat", onCombatChange);
@@ -216,5 +262,16 @@ Hooks.on("updateCombat", (combat, changes) => {
 
 // User names and colours show on notes.
 Hooks.on("updateUser", (user, changes) => {
-  if ("name" in changes || "color" in changes) FaceSheet.refreshAll();
+  if ("name" in changes || "color" in changes) EntrySheet.refreshAll();
 });
+
+// A place shows the name of its scene.
+for (const hook of ["updateScene", "deleteScene"]) {
+  Hooks.on(hook, () => {
+    try {
+      EntrySheet.refreshAll({ kind: "places" });
+    } catch (err) {
+      console.error(`${MODULE_ID} | ${hook}`, err);
+    }
+  });
+}

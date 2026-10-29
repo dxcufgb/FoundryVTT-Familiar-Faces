@@ -43,8 +43,8 @@ export function cleanLine(value, max = 200) {
 }
 
 /** Name cleanup for a selection: no surrounding quotes or punctuation, one line. */
-export function cleanName(value) {
-  return cleanLine(value, 80).replace(/^[\s"'“”‘’«»([{,.;:!?-]+|[\s"'“”‘’«»)\]},.;:!?-]+$/g, "").trim();
+export function cleanName(value, max = 80) {
+  return cleanLine(value, max).replace(/^[\s"'“”‘’«»([{,.;:!?-]+|[\s"'“”‘’«»)\]},.;:!?-]+$/g, "").trim();
 }
 
 /** A stable hue for a name, so a face without a portrait keeps its colour everywhere. */
@@ -193,6 +193,11 @@ export function insertAtCursor(field, text) {
 /** Who may add new faces: the GM, and players when the world setting allows it. */
 export function canAddFaces() {
   return mayAddFaces() && !combatBlocks();
+}
+
+/** Who may add new places: the same people as for NPCs; a fight doesn't stop anyone from noting where they are. */
+export function canAddPlaces() {
+  return mayAddFaces();
 }
 
 /** Who may add faces at all, combat aside. */

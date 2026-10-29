@@ -10,24 +10,24 @@
     {{#if label}}
     <button type="button" class="dxff-group-header" data-action="toggleGroup" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}">
       <i class="dxff-caret fa-solid fa-chevron-down" inert></i>
-      <i class="fa-solid fa-location-dot dxff-group-icon" inert></i>
+      <i class="{{groupIcon}} dxff-group-icon" inert></i>
       <span class="dxff-group-label {{#if unknown}}unknown{{/if}}">{{label}}</span>
       <span class="dxff-count">{{count}}</span>
     </button>
     {{/if}}
     <ol class="dxff-faces">
       {{#each faces}}
-      <li class="dxff-face" data-face-id="{{id}}" data-action="openFace" tabindex="0">
-        <div class="dxff-avatar" style="--hue: {{hue}}">
+      <li class="dxff-face dxff-kind-{{kind}}" data-entry-id="{{id}}" data-kind="{{kind}}" data-action="openFace" tabindex="0">
+        <div class="dxff-avatar {{#if square}}dxff-square{{/if}}" style="--hue: {{hue}}">
           {{#if img}}<img src="{{img}}" alt="" loading="lazy">{{else}}<span>{{initials}}</span>{{/if}}
         </div>
         <div class="dxff-face-body">
           <div class="dxff-face-name">{{{nameHTML}}}{{#if knownBy}}<i class="fa-solid fa-user-lock dxff-known" data-tooltip="{{knownBy}}" aria-label="{{knownBy}}"></i>{{/if}}</div>
-          {{#if places.length}}
+          {{#if chips.length}}
           <div class="dxff-places">
-            {{#each places}}
+            {{#each chips}}
             <button type="button" class="dxff-place" data-action="filterPlace" data-place="{{name}}"
-                    data-tooltip="DXFF.FilterPlace"><i class="fa-solid fa-location-dot" inert></i>{{{html}}}</button>
+                    data-tooltip="{{tooltip}}"><i class="{{icon}}" inert></i>{{{html}}}</button>
             {{/each}}
           </div>
           {{/if}}
@@ -35,9 +35,14 @@
         </div>
         {{#if canShare}}
         <button type="button" class="dxff-icon-btn dxff-share-face" data-action="shareFace"
-                data-tooltip="DXFF.ShareWithPartyHint" aria-label="{{localize "DXFF.ShareWithParty"}}">
+                data-tooltip="{{shareHint}}" aria-label="{{localize "DXFF.ShareWithParty"}}">
           <i class="fa-solid fa-users" inert></i>
         </button>
+        {{/if}}
+        {{#if peopleCount}}
+        <div class="dxff-note-count dxff-people-count" data-tooltip="{{peopleHint}}">
+          <i class="fa-solid fa-masks-theater" inert></i>{{peopleCount}}
+        </div>
         {{/if}}
         {{#if noteCount}}
         <div class="dxff-note-count" data-tooltip="{{localize "DXFF.NoteCountHint" mine=mineCount others=othersCount}}">
@@ -50,12 +55,12 @@
   </section>
   {{else}}
   <div class="dxff-empty">
-    <i class="fa-solid fa-masks-theater" inert></i>
-    <p>{{emptyMessage}}</p>
-    {{#if searching}}
+    <i class="{{@root.emptyIcon}}" inert></i>
+    <p>{{@root.emptyMessage}}</p>
+    {{#if @root.searching}}
     <button type="button" data-action="clearSearch"><i class="fa-solid fa-xmark" inert></i> {{localize "DXFF.ClearSearch"}}</button>
-    {{else}}{{#if canAdd}}{{#unless total}}
-    <button type="button" data-action="addFace"><i class="fa-solid fa-user-plus" inert></i> {{localize "DXFF.AddFace"}}</button>
+    {{else}}{{#if @root.canAdd}}{{#unless @root.total}}
+    <button type="button" data-action="addFace"><i class="{{@root.addIcon}}" inert></i> {{@root.addLabel}}</button>
     {{/unless}}{{/if}}{{/if}}
   </div>
   {{/each}}
