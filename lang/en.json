@@ -1,16 +1,16 @@
 {
   "DXFF": {
     "Title": "Familiar Faces",
-    "Search": "Search familiar faces",
+    "Search": "Search NPCs",
     "SearchPlaceholder": "Search names, places, notes…",
-    "SearchFaces": "Search familiar faces…",
+    "SearchFaces": "Search NPCs…",
     "ClearSearch": "Clear search",
-    "NoMatches": "No familiar faces match.",
+    "NoMatches": "No NPCs match.",
     "EmptyGM": "Nobody here yet. Select a name in a journal and right-click it to add them.",
     "EmptyPlayer": "Nobody here yet. The people your party meets will show up here.",
     "NotReady": "Familiar Faces is not set up yet. A GM needs to log in once with the module enabled.",
     "PrivateNotReady": "Your private notebook is created the next time a GM logs in. Until then you can share notes with the party.",
-    "CountHint": "Familiar faces",
+    "CountHint": "NPCs",
     "GroupByLabel": "Group by",
     "SortByLabel": "Sort by",
     "GroupBy": {
@@ -25,16 +25,16 @@
     "FilterPlace": "Show everyone met here",
     "NoteCountHint": "Notes you can see: {mine} yours, {others} from others",
 
-    "AddFace": "Add face",
+    "AddFace": "Add NPC",
     "AddFaceHint": "Add someone the party has met",
     "Add": "Add",
     "Added": "{name} was added to Familiar Faces.",
     "AddedOn": "Added",
     "AlreadyExists": "{name} is already in Familiar Faces.",
-    "CannotAdd": "Only the GM can add new faces.",
-    "InCombat": "No time to memorize faces in the middle of a fight. Try again once combat is over.",
+    "CannotAdd": "Only the GM can add new NPCs.",
+    "InCombat": "No time to make new acquaintances in the middle of a fight. Try again once combat is over.",
     "AddMet": "Add someone you met",
-    "AddMetHint": "Someone without a token or character sheet: a name you overheard, a face in the crowd",
+    "AddMetHint": "Someone without a token or character sheet: a name you overheard, someone in the crowd",
     "AddMetIntro": "Someone you met who isn't on the map: they go into your own Familiar Faces.",
     "AddMetHintPrivate": "Only you (and the GM) see them until you share them with the party.",
     "AlreadyYours": "{name} is already in your Familiar Faces.",
@@ -66,7 +66,7 @@
     "InfoHint": "Shown to every player. Links such as @UUID[…] work.",
     "UseScene": "Use the current scene ({scene})",
     "Source": "Found in",
-    "SourceGone": "The journal this face came from no longer exists.",
+    "SourceGone": "The journal this NPC came from no longer exists.",
 
     "Portrait": "Portrait",
     "PlaceholderLegend": "Look (until there's a portrait)",
@@ -115,14 +115,14 @@
     "BindImage": "Add image to NPC",
     "BindButton": "Use as portrait",
     "BindHint": "Pick who this is. Double-click a name to use the image right away.",
-    "NewFaceWithImage": "New face with this image",
-    "NoFacesYet": "There are no familiar faces yet; add one with this image.",
+    "NewFaceWithImage": "New NPC with this image",
+    "NoFacesYet": "There are no NPCs yet; add one with this image.",
     "PickFace": "Pick someone first.",
 
     "DeleteFace": "Remove",
     "DeleteFaceConfirm": "Remove <b>{name}</b> from Familiar Faces? Everyone's notes about them are removed too.",
-    "FaceGone": "This face has been removed from Familiar Faces.",
-    "ForgetFace": "Remove from my faces",
+    "FaceGone": "This NPC has been removed from Familiar Faces.",
+    "ForgetFace": "Remove from my NPCs",
     "ForgetFaceConfirm": "Remove <b>{name}</b> from your Familiar Faces? The other players who added them keep them, and your private notes are kept in case you add them again.",
     "ForgetFaceConfirmLast": "Remove <b>{name}</b> from your Familiar Faces? Nobody else has added them, so they are removed. Your private notes are kept in case you add them again.",
     "ShareWithParty": "Share with the party",
@@ -178,7 +178,7 @@
     "StoreShared": "Familiar Faces (shared)",
     "StorePrivate": "Familiar Faces – {name}'s notes",
 
-    "NotifyCreated": "New familiar face: <b>{name}</b>",
+    "NotifyCreated": "New NPC: <b>{name}</b>",
     "NotifySharedBy": "{by} shared <b>{name}</b> with the party.",
     "NotifyPortrait": "<b>{name}</b> has a new portrait.",
     "NotifyNote": "{by} shared a note about <b>{name}</b>.",
@@ -195,10 +195,10 @@
       "AddEntry": "Add to Familiar Faces",
       "AddPage": "Add to Familiar Faces",
       "BindImage": "Add image to NPC…",
-      "NewFaceWithImage": "New face with this image…",
+      "NewFaceWithImage": "New NPC with this image…",
       "ViewImage": "View image",
       "AddNpcForMe": "Add {name} to my Familiar Faces",
-      "InCombat": "In combat – no time to memorize faces",
+      "InCombat": "In combat – no time for new acquaintances",
       "AddNpcForAll": "Add {name} to Familiar Faces for all players",
       "AddActor": "Add to Familiar Faces"
     },
@@ -209,8 +209,8 @@
         "Hint": "Tell players when someone new is added, gets a portrait, or a note is shared with them."
       },
       "PlayersCanAdd": {
-        "Name": "Players can add faces",
-        "Hint": "Let players add people to Familiar Faces themselves (Add face button and right-click on a selected name). Portraits stay GM-only."
+        "Name": "Players can add NPCs",
+        "Hint": "Let players add people to Familiar Faces themselves (Add NPC button and right-click on a selected name). Portraits stay GM-only."
       },
       "ImageFolder": {
         "Name": "Portrait upload folder",
@@ -222,7 +222,7 @@
       },
       "ImageMenu": {
         "Name": "Right-click journal images (GM)",
-        "Hint": "Right-clicking an image in a journal offers to use it as the portrait of a familiar face. Hold Shift for the normal menu."
+        "Hint": "Right-clicking an image in a journal offers to use it as the portrait of an NPC. Hold Shift for the normal menu."
       },
       "KnownNameplates": {
         "Name": "Show the names of NPCs the party knows",
