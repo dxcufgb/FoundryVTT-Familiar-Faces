@@ -1,0 +1,28 @@
+<section class="dxff-links">
+  <header class="dxff-links-header">
+    <h3><i class="{{icon}}" inert></i> {{title}} <span class="dxff-count">{{items.length}}</span></h3>
+    {{#if linkAction}}
+    <button type="button" class="dxff-icon-btn" data-action="{{linkAction}}" data-tooltip="{{linkHint}}"
+            aria-label="{{linkLabel}}"><i class="fa-solid fa-link" inert></i></button>
+    {{/if}}
+  </header>
+  <ul class="dxff-link-list">
+    {{#each items}}
+    <li class="dxff-link-item" data-faction-id="{{factionId}}" data-link-kind="{{linkKind}}" data-link-id="{{linkId}}">
+      <button type="button" class="dxff-link-open" data-action="openLinked" data-open-kind="{{openKind}}" data-open-id="{{openId}}">
+        <span class="dxff-avatar {{avatarClass}}" style="--hue: {{hue}}">{{#if img}}<img src="{{img}}" alt="" loading="lazy">{{else}}<span>{{initials}}</span>{{/if}}</span>
+        <span class="dxff-link-name">{{name}}</span>
+        {{#if role}}<span class="dxff-link-role">{{role}}</span>{{/if}}
+      </button>
+      {{#if canUnlink}}
+      <button type="button" class="dxff-icon-btn" data-action="editFactionRole" data-tooltip="DXFF.EditRole"
+              aria-label="{{localize "DXFF.EditRole"}}"><i class="fa-solid fa-pen" inert></i></button>
+      <button type="button" class="dxff-icon-btn dxff-danger" data-action="unlinkFactionLink" data-tooltip="DXFF.Unlink"
+              aria-label="{{localize "DXFF.Unlink"}}"><i class="fa-solid fa-link-slash" inert></i></button>
+      {{/if}}
+    </li>
+    {{else}}
+    <li class="dxff-no-notes">{{emptyText}}</li>
+    {{/each}}
+  </ul>
+</section>

@@ -3,9 +3,9 @@ import { MODULE_ID, t, escapeHTML, randomId } from "./util.js";
 /*
  * Placeholder portraits for faces without a picture of their own: a symbol on a coloured background that gives a feel
  * for who they are (a crown for royalty, an anvil and hammer for a smith, a coin purse for a merchant…), and the same
- * for places (a castle, a tavern sign, a forest…).
- * They are ordinary image files in assets/placeholders (places: assets/placeholders/places), so a face or place simply
- * stores the path as its `img`; a real picture set later replaces it. Symbols: game-icons.net, CC BY 3.0 (see
+ * for places (a castle, a tavern sign, a forest…) and factions (a fleur-de-lys for a noble house, a mask for thieves…).
+ * They are ordinary image files in assets/placeholders (places: assets/placeholders/places, factions:
+ * assets/placeholders/factions), so a face, place or faction simply stores the path as its `img`; a real picture set later replaces it. Symbols: game-icons.net, CC BY 3.0 (see
  * assets/placeholders/LICENSE.txt).
  */
 
@@ -19,11 +19,25 @@ export const PLACE_PLACEHOLDERS = [
   "island", "forest", "mountains", "cave", "dungeon", "ruins", "graveyard", "swamp", "desert", "camp", "road", "portal"
 ];
 
+export const FACTION_PLACEHOLDERS = [
+  "crown", "noble", "guild", "merchants", "thieves", "assassins", "spies", "secret", "cult", "church", "knights", "army",
+  "mercenaries", "watch", "mages", "scholars", "pirates", "bandits", "rebels", "druids", "tribe", "council", "undead", "monsters"
+];
+
 const FOLDER = `modules/${MODULE_ID}/assets/placeholders`;
 
+/** The looks of each kind: their ids, their sub-folder and the DXFF.* keys of their labels. */
+const LOOKS = {
+  faces: { ids: PLACEHOLDERS, folder: FOLDER, labels: "Roles", hint: "PickLookHint" },
+  places: { ids: PLACE_PLACEHOLDERS, folder: `${FOLDER}/places`, labels: "PlaceLooks", hint: "PickPlaceLookHint" },
+  factions: { ids: FACTION_PLACEHOLDERS, folder: `${FOLDER}/factions`, labels: "FactionLooks", hint: "PickFactionLookHint" }
+};
+
+const looksOf = kind => LOOKS[kind] ?? LOOKS.faces;
+
 export function placeholderSrc(id, kind = "faces") {
-  if (kind === "places") return PLACE_PLACEHOLDERS.includes(id) ? `${FOLDER}/places/${id}.svg` : "";
-  return PLACEHOLDERS.includes(id) ? `${FOLDER}/${id}.svg` : "";
+  const looks = looksOf(kind);
+  return looks.ids.includes(id) ? `${looks.folder}/${id}.svg` : "";
 }
 
 export function isPlaceholder(src) {
@@ -49,7 +63,7 @@ export function canPickPlaceholder(face, canEdit) {
  * The radio grid of placeholders for a form, with "none" (initials) first.
  * @param {string} current  The face's or place's current image (a placeholder is preselected).
  * @param {object} [options]
- * @param {"faces"|"places"} [options.kind]
+ * @param {"faces"|"places"|"factions"} [options.kind]
  */
 export function placeholderGridHTML(current = "", { legend = true, kind = "faces" } = {}) {
   const uid = randomId();
@@ -58,10 +72,10 @@ export function placeholderGridHTML(current = "", { legend = true, kind = "faces
       <input type="radio" name="placeholder" value="${escapeHTML(value)}" aria-label="${escapeHTML(label)}" ${checked ? "checked" : ""}>${inner}
     </label>`;
   const none = cell("", `<span><i class="fa-solid fa-ban" inert></i></span>`, t("NoPortrait"), !isPlaceholder(current));
-  const ids = kind === "places" ? PLACE_PLACEHOLDERS : PLACEHOLDERS;
-  const items = ids.map(id => {
+  const looks = looksOf(kind);
+  const items = looks.ids.map(id => {
     const src = placeholderSrc(id, kind);
-    return cell(src, `<img src="${src}" alt="">`, t(kind === "places" ? `PlaceLooks.${id}` : `Roles.${id}`), current === src);
+    return cell(src, `<img src="${src}" alt="">`, t(`${looks.labels}.${id}`), current === src);
   }).join("");
   return `
     <fieldset class="dxff-pick-images dxff-placeholders" id="dxff-ph-${uid}">
@@ -76,7 +90,7 @@ export async function pickPlaceholderDialog(current = "", name = "", kind = "fac
     window: { title: name ? t("PickLookFor", { name }) : t("PickLook"), icon: "fa-solid fa-masks-theater" },
     position: { width: 520 },
     classes: ["dxff-dialog"],
-    content: `<div class="dxff"><p class="hint">${escapeHTML(t(kind === "places" ? "PickPlaceLookHint" : "PickLookHint"))}</p>${placeholderGridHTML(current, { legend: false, kind })}</div>`,
+    content: `<div class="dxff"><p class="hint">${escapeHTML(t(looksOf(kind).hint))}</p>${placeholderGridHTML(current, { legend: false, kind })}</div>`,
     rejectClose: false,
     buttons: [
       { action: "cancel", label: t("Cancel"), icon: "fa-solid fa-xmark" },

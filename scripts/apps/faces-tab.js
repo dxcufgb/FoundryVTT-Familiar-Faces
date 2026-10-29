@@ -1,34 +1,59 @@
-import { MODULE_ID, TEMPLATE_PATH, t, nameHue, initials, canAddFaces, canAddPlaces, mayAddFaces, combatBlocks, userInfo } from "../util.js";
+import {
+  MODULE_ID, TEMPLATE_PATH, t, nameHue, initials, canAddFaces, canAddPlaces, canAddFactions, mayAddFaces, combatBlocks, userInfo
+} from "../util.js";
 import * as store from "../store.js";
-import { tokenize, matchFace, matchPlace, highlight } from "../search.js";
+import { tokenize, matchFace, matchPlace, matchFaction, highlight } from "../search.js";
 import { EntrySheet } from "./entry-sheet.js";
 import { FaceSheet } from "./face-sheet.js";
 import { PlaceSheet } from "./place-sheet.js";
-import { addFaceDialog, addPlaceDialog } from "../capture.js";
+import { FactionSheet } from "./faction-sheet.js";
+import { addEntryDialog } from "../capture.js";
 import { addMetFaceDialog } from "../npcs.js";
 import { addVisitedPlaceDialog } from "../places.js";
+import { addKnownFactionDialog } from "../factions.js";
+import { avatarClass } from "../pickers.js";
 import { browseImage, shareImage } from "../images.js";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { AbstractSidebarTab } = foundry.applications.sidebar;
 
-export const MODES = ["faces", "places"];
+export const MODES = ["faces", "places", "factions"];
 export const GROUP_MODES = ["none", "place"];
 export const PLACE_GROUP_MODES = ["none", "region"];
+export const FACTION_GROUP_MODES = ["none", "category"];
 export const SORT_MODES = ["name", "recent"];
 const UNKNOWN = "\u0000unknown";
 
-/** The settings and texts of each list. */
+/** The settings and texts (DXFF.* keys) of each list. */
 const MODE = {
   faces: {
     groupSetting: "groupBy", sortSetting: "sortBy", groups: GROUP_MODES, icon: "fa-solid fa-masks-theater",
-    sheet: () => FaceSheet
+    sheet: () => FaceSheet, canAdd: canAddFaces, addMet: () => addMetFaceDialog(),
+    add: "AddFace", addHint: "AddFaceHint", addIcon: "fa-solid fa-user-plus", searchPlaceholder: "SearchPlaceholder",
+    search: "Search", met: "AddMet", metHint: "AddMetHint", metIcon: "fa-solid fa-user-plus", countHint: "CountHint",
+    emptyGM: "EmptyGM", emptyPlayer: "EmptyPlayer", noMatches: "NoMatches", unknownGroup: "UnknownPlace",
+    groupIcon: "fa-solid fa-location-dot", chipTooltip: "FilterPlace", shareHint: "ShareWithPartyHint"
   },
   places: {
     groupSetting: "placeGroupBy", sortSetting: "placeSortBy", groups: PLACE_GROUP_MODES, icon: "fa-solid fa-map-location-dot",
-    sheet: () => PlaceSheet
+    sheet: () => PlaceSheet, canAdd: canAddPlaces, addMet: () => addVisitedPlaceDialog(),
+    add: "AddPlace", addHint: "AddPlaceHint", addIcon: "fa-solid fa-map-pin", searchPlaceholder: "SearchPlacesPlaceholder",
+    search: "SearchPlaces", met: "AddVisited", metHint: "AddVisitedHint", metIcon: "fa-solid fa-map-pin", countHint: "PlaceCountHint",
+    emptyGM: "EmptyPlacesGM", emptyPlayer: "EmptyPlacesPlayer", noMatches: "NoPlaceMatches", unknownGroup: "UnknownRegion",
+    groupIcon: "fa-solid fa-map", chipTooltip: "FilterRegion", shareHint: "SharePlaceWithPartyHint"
+  },
+  factions: {
+    groupSetting: "factionGroupBy", sortSetting: "factionSortBy", groups: FACTION_GROUP_MODES, icon: "fa-solid fa-shield-halved",
+    sheet: () => FactionSheet, canAdd: canAddFactions, addMet: () => addKnownFactionDialog(),
+    add: "AddFaction", addHint: "AddFactionHint", addIcon: "fa-solid fa-shield-halved", searchPlaceholder: "SearchFactionsPlaceholder",
+    search: "SearchFactions", met: "AddKnownFaction", metHint: "AddKnownFactionHint", metIcon: "fa-solid fa-shield-halved",
+    countHint: "FactionCountHint", emptyGM: "EmptyFactionsGM", emptyPlayer: "EmptyFactionsPlayer", noMatches: "NoFactionMatches",
+    unknownGroup: "UnknownCategory", groupIcon: "fa-solid fa-tag", chipTooltip: "FilterCategory", shareHint: "ShareFactionWithPartyHint"
   }
 };
+
+/** The kind of a list element (data-kind). */
+const kindOfEl = li => MODES.includes(li.dataset.kind) ? li.dataset.kind : "faces";
 
 /** The Familiar Faces & Places tab in the right sidebar (and its pop-out): a list of NPCs and a list of places. */
 export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
@@ -58,7 +83,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
   };
 
   /** Free-text search of each list, shared by the sidebar tab and its pop-out. */
-  static searches = { faces: "", places: "" };
+  static searches = { faces: "", places: "", factions: "" };
   static collapsed = new Set();
 
   /** Search of the faces list (as in earlier versions). */
@@ -107,57 +132,70 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
     const terms = tokenize(FacesTab.searches[mode]);
     const faces = ready ? store.allFaces() : [];
     const places = ready ? store.allPlaces() : [];
+    const factions = ready ? store.allFactions() : [];
     const notesByFace = ready ? store.visibleNotesByFace() : new Map();
+    const config = MODE[mode];
 
     const found = [];
     if (mode === "faces") {
-      // The places an NPC is linked to by hand are searchable too.
+      // The places and factions an NPC is linked to by hand are searchable too.
       const linkedNames = new Map();
-      for (const place of places) {
-        for (const link of place.links) {
-          if (!linkedNames.has(link.faceId)) linkedNames.set(link.faceId, []);
-          linkedNames.get(link.faceId).push(place.name);
-        }
-      }
+      const addName = (faceId, name) => {
+        if (!linkedNames.has(faceId)) linkedNames.set(faceId, []);
+        linkedNames.get(faceId).push(name);
+      };
+      for (const place of places) for (const link of place.links) addName(link.faceId, place.name);
+      for (const faction of factions) for (const link of faction.links) addName(link.faceId, faction.name);
       for (const face of faces) {
         const notes = notesByFace.get(face.id) ?? [];
         const match = matchFace(face, notes, terms, linkedNames.get(face.id) ?? []);
         if (match) found.push({ entry: face, notes, snippet: match.snippet });
       }
-    } else {
+    } else if (mode === "places") {
       const notesByPlace = ready ? store.visibleNotesByPlace() : new Map();
       for (const place of places) {
         const notes = notesByPlace.get(place.id) ?? [];
         const people = store.facesOfPlace(place, faces, notesByFace);
-        const match = matchPlace(place, notes, terms, people.map(p => p.face.name));
+        const factionNames = store.factionsOf(place, factions).map(f => f.faction.name);
+        const match = matchPlace(place, notes, terms, [...people.map(p => p.face.name), ...factionNames]);
         if (match) found.push({ entry: place, notes, people, snippet: match.snippet });
+      }
+    } else {
+      const notesByFaction = ready ? store.visibleNotesByFaction() : new Map();
+      for (const faction of factions) {
+        const notes = notesByFaction.get(faction.id) ?? [];
+        const members = store.membersOfFaction(faction, "faces", faces);
+        const homes = store.membersOfFaction(faction, "places", places);
+        const names = [...members, ...homes].flatMap(({ entry, link }) => [entry.name, link.role]);
+        const match = matchFaction(faction, notes, terms, names);
+        if (match) found.push({ entry: faction, notes, people: members, homes, snippet: match.snippet });
       }
     }
 
-    const total = mode === "faces" ? faces.length : places.length;
-    const canAdd = mode === "faces" ? canAddFaces() : canAddPlaces();
+    const counts = { faces: faces.length, places: places.length, factions: factions.length };
+    const total = counts[mode];
+    const canAdd = config.canAdd();
     const groupBy = this.groupBy;
     Object.assign(context, {
       ready,
       mode,
       isPlaces: mode === "places",
       tabs: MODES.map(id => ({
-        id, active: id === mode, icon: MODE[id].icon, label: t(`Tabs.${id}`),
-        count: id === "faces" ? faces.length : places.length
+        id, active: id === mode, icon: MODE[id].icon, label: t(`Tabs.${id}`), count: counts[id]
       })),
       isGM: game.user.isGM,
       canAdd,
       addBlocked: mode === "faces" && mayAddFaces() && combatBlocks(),
-      addLabel: t(mode === "faces" ? "AddFace" : "AddPlace"),
-      addHint: t(mode === "faces" ? "AddFaceHint" : "AddPlaceHint"),
-      addIcon: mode === "faces" ? "fa-solid fa-user-plus" : "fa-solid fa-map-pin",
-      searchPlaceholder: t(mode === "faces" ? "SearchPlaceholder" : "SearchPlacesPlaceholder"),
-      searchLabel: t(mode === "faces" ? "Search" : "SearchPlaces"),
+      addLabel: t(config.add),
+      addHint: t(config.addHint),
+      addIcon: config.addIcon,
+      searchPlaceholder: t(config.searchPlaceholder),
+      searchLabel: t(config.search),
       canAddMet: !game.user.isGM && ready,
       metBlocked: mode === "faces" && combatBlocks(),
-      metLabel: t(mode === "faces" ? "AddMet" : "AddVisited"),
-      metHint: t(mode === "faces" ? "AddMetHint" : "AddVisitedHint"),
-      metIcon: mode === "faces" ? "fa-solid fa-user-plus" : "fa-solid fa-map-pin",
+      metLabel: t(config.met),
+      metHint: t(config.metHint),
+      metIcon: config.metIcon,
       search: FacesTab.searches[mode],
       searching: terms.length > 0,
       groupBy,
@@ -167,12 +205,10 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       shown: found.length,
       total,
       totalIcon: MODE[mode].icon,
-      countHint: t(mode === "faces" ? "CountHint" : "PlaceCountHint"),
+      countHint: t(config.countHint),
       groups: this.#group(found, terms, groupBy),
       emptyIcon: MODE[mode].icon,
-      emptyMessage: !total
-        ? t(mode === "faces" ? (canAddFaces() ? "EmptyGM" : "EmptyPlayer") : (canAddPlaces() ? "EmptyPlacesGM" : "EmptyPlacesPlayer"))
-        : t(mode === "faces" ? "NoMatches" : "NoPlaceMatches")
+      emptyMessage: !total ? t(canAdd ? config.emptyGM : config.emptyPlayer) : t(config.noMatches)
     });
     return context;
   }
@@ -189,36 +225,39 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
   static knownByLabel(entry) {
     if (!entry.knownBy) return "";
     const names = entry.knownBy.map(id => id === game.user.id ? t("You") : userInfo(id).name);
-    return t(entry.kind === "places" ? "KnownByPlace" : "KnownBy", { names: names.join(", ") || "—" });
+    const key = { faces: "KnownBy", places: "KnownByPlace", factions: "KnownByFaction" }[entry.kind] ?? "KnownBy";
+    return t(key, { names: names.join(", ") || "—" });
   }
 
-  /** The place a list entry is grouped under: where a face was met, or the region of a place. */
+  /** What a list entry is grouped under: where a face was met, the region of a place, or the kind of a faction. */
   static groupOf({ entry, notes }) {
-    return entry.kind === "places" ? entry.region : FacesTab.placeOf(entry, notes);
+    if (entry.kind === "places") return entry.region;
+    if (entry.kind === "factions") return entry.category;
+    return FacesTab.placeOf(entry, notes);
   }
 
-  #card({ entry, notes, people, snippet }, terms) {
-    const isPlace = entry.kind === "places";
+  #card({ entry, notes, people, homes, snippet }, terms) {
+    const config = MODE[entry.kind] ?? MODE.faces;
     const chip = FacesTab.groupOf({ entry, notes });
     const mine = notes.filter(n => n.createdBy === game.user.id).length;
+    const factions = entry.kind === "factions";
     return {
       kind: entry.kind,
-      square: isPlace,
+      avatarClass: avatarClass(entry.kind),
       knownBy: FacesTab.knownByLabel(entry),
       canShare: store.canShareEntry(entry),
-      shareHint: t(isPlace ? "SharePlaceWithPartyHint" : "ShareWithPartyHint"),
+      shareHint: t(config.shareHint),
       id: entry.id,
       name: entry.name,
       nameHTML: highlight(entry.name, terms),
       img: entry.img,
       initials: initials(entry.name),
       hue: nameHue(entry.name),
-      chips: chip ? [{
-        name: chip, html: highlight(chip, terms), icon: isPlace ? "fa-solid fa-map" : "fa-solid fa-location-dot",
-        tooltip: t(isPlace ? "FilterRegion" : "FilterPlace")
-      }] : [],
+      chips: chip ? [{ name: chip, html: highlight(chip, terms), icon: config.groupIcon, tooltip: t(config.chipTooltip) }] : [],
       peopleCount: people?.length ?? 0,
-      peopleHint: people?.length ? t("PeopleCountHint", { count: people.length }) : "",
+      peopleHint: people?.length ? t(factions ? "MemberCountHint" : "PeopleCountHint", { count: people.length }) : "",
+      placeCount: homes?.length ?? 0,
+      placeHint: homes?.length ? t("FactionPlaceCountHint", { count: homes.length }) : "",
       noteCount: notes.length,
       mineCount: mine,
       othersCount: notes.length - mine,
@@ -243,13 +282,13 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       const place = FacesTab.groupOf(item);
       const key = `${this.mode}:${place ? place.toLowerCase() : UNKNOWN}`;
       if (!groups.has(key)) {
-        groups.set(key, { key, label: place || t(this.mode === "places" ? "UnknownRegion" : "UnknownPlace"), unknown: !place, faces: [] });
+        groups.set(key, { key, label: place || t(MODE[this.mode].unknownGroup), unknown: !place, faces: [] });
       }
       groups.get(key).faces.push(this.#card(item, terms));
     }
     return [...groups.values()]
       .sort((a, b) => (a.unknown - b.unknown) || a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: "base" }))
-      .map(g => ({ ...g, count: g.faces.length, collapsed: FacesTab.collapsed.has(g.key), groupIcon: this.mode === "places" ? "fa-solid fa-map" : "fa-solid fa-location-dot" }));
+      .map(g => ({ ...g, count: g.faces.length, collapsed: FacesTab.collapsed.has(g.key), groupIcon: MODE[this.mode].groupIcon }));
   }
 
   /* -------------------------------------------- */
@@ -303,7 +342,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
   }
 
   static #entryMenu() {
-    const kindOf = li => li.dataset.kind === "places" ? "places" : "faces";
+    const kindOf = kindOfEl;
     const entry = li => store.getEntry(kindOf(li), li.dataset.entryId);
     const sheet = li => MODE[kindOf(li)].sheet();
     return [
@@ -321,7 +360,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       },
       {
         name: "DXFF.ChangePicture", icon: '<i class="fa-solid fa-image"></i>',
-        condition: li => game.user.isGM && kindOf(li) === "places" && !!entry(li),
+        condition: li => game.user.isGM && kindOf(li) !== "faces" && !!entry(li),
         callback: async li => {
           const path = await browseImage(entry(li)?.img);
           if (path) await store.setEntryImage(kindOf(li), li.dataset.entryId, path);
@@ -337,7 +376,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       },
       {
         name: "DXFF.ShowPicture", icon: '<i class="fa-solid fa-eye"></i>',
-        condition: li => game.user.isGM && kindOf(li) === "places" && !!entry(li)?.img,
+        condition: li => game.user.isGM && kindOf(li) !== "faces" && !!entry(li)?.img,
         callback: li => {
           const e = entry(li);
           if (e?.img) shareImage(e.img, e.name);
@@ -350,8 +389,8 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       },
       {
         name: "DXFF.RemovePicture", icon: '<i class="fa-solid fa-image"></i>',
-        condition: li => game.user.isGM && kindOf(li) === "places" && !!entry(li)?.img,
-        callback: li => store.setEntryImage("places", li.dataset.entryId, "")
+        condition: li => game.user.isGM && kindOf(li) !== "faces" && !!entry(li)?.img,
+        callback: li => store.setEntryImage(kindOf(li), li.dataset.entryId, "")
       },
       {
         name: "DXFF.ShareWithParty", icon: '<i class="fa-solid fa-users"></i>',
@@ -369,6 +408,11 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
         callback: li => PlaceSheet.confirmForget(li.dataset.entryId)
       },
       {
+        name: "DXFF.ForgetFaction", icon: '<i class="fa-solid fa-eye-slash"></i>',
+        condition: li => kindOf(li) === "factions" && store.canForgetEntry(entry(li)),
+        callback: li => FactionSheet.confirmForget(li.dataset.entryId)
+      },
+      {
         name: "DXFF.DeleteFace", icon: '<i class="fa-solid fa-trash"></i>',
         condition: li => store.canDeleteEntry(entry(li)),
         callback: li => sheet(li).confirmDelete(li.dataset.entryId)
@@ -380,7 +424,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
   /*  Actions                                     */
   /* -------------------------------------------- */
 
-  /** Switches between the faces and the places, in the tab and its pop-out. */
+  /** Switches between the faces, the places and the factions, in the tab and its pop-out. */
   static async #onSwitchTab(event, target) {
     const mode = target.dataset.tab;
     if (!MODES.includes(mode) || mode === FacesTab.mode) return;
@@ -392,18 +436,16 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
 
   static #onAddEntry() {
     if (!store.ready()) return ui.notifications.warn(t("NotReady"));
-    if (FacesTab.mode === "places") addPlaceDialog({});
-    else addFaceDialog({});
+    addEntryDialog(FacesTab.mode, {});
   }
 
   static #onAddMet() {
-    if (FacesTab.mode === "places") addVisitedPlaceDialog();
-    else addMetFaceDialog();
+    MODE[FacesTab.mode].addMet();
   }
 
   static #onOpenEntry(event, target) {
     const el = target.closest("[data-entry-id]");
-    if (el) EntrySheet.openEntry(el.dataset.kind === "places" ? "places" : "faces", el.dataset.entryId);
+    if (el) EntrySheet.openEntry(kindOfEl(el), el.dataset.entryId);
   }
 
   static #onToggleGroup(event, target) {
@@ -413,7 +455,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
     FacesTab.renderAllLists();
   }
 
-  /** A place (or region) on a card: show only what is there. */
+  /** A place (or region, or kind of faction) on a card: show only what is there. */
   static #onFilterPlace(event, target) {
     event.stopPropagation();
     const place = target.dataset.place;
@@ -426,8 +468,7 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
     event.stopPropagation();
     const el = target.closest("[data-entry-id]");
     if (!el) return;
-    if (el.dataset.kind === "places") PlaceSheet.shareWithParty(el.dataset.entryId);
-    else FaceSheet.shareWithParty(el.dataset.entryId);
+    MODE[kindOfEl(el)].sheet().shareWithParty(el.dataset.entryId);
   }
 
   static #onClearSearch() {

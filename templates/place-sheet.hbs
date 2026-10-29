@@ -97,6 +97,10 @@
     </ul>
   </section>
 
+  {{#if showFactions}}
+  {{> "modules/dxcufgbs-familiar-faces/templates/link-list.hbs" factionsSection}}
+  {{/if}}
+
   {{> "modules/dxcufgbs-familiar-faces/templates/notes.hbs"}}
   {{/if}}
 </div>

@@ -1,0 +1,69 @@
+<div class="dxff-sheet-scroll">
+  {{#if missing}}
+  <div class="dxff-empty">
+    <i class="fa-solid fa-ghost" inert></i>
+    <p>{{goneText}}</p>
+  </div>
+  {{else}}
+  <section class="dxff-profile">
+    {{> "modules/dxcufgbs-familiar-faces/templates/portrait.hbs"}}
+
+    <div class="dxff-profile-body">
+      {{#if editing}}
+      <form class="dxff-face-edit" autocomplete="off">
+        <div class="form-group stacked">
+          <label>{{localize "DXFF.Field.FactionName"}}</label>
+          <input type="text" data-bind="draft.name" value="{{draft.name}}" maxlength="120" required>
+        </div>
+        <div class="form-group stacked">
+          <label>{{localize "DXFF.Field.Category"}}</label>
+          <input type="text" data-bind="draft.category" value="{{draft.category}}" list="{{appId}}-categories" maxlength="120"
+                 placeholder="{{localize "DXFF.Placeholder.Category"}}">
+        </div>
+        <div class="form-group stacked">
+          <label>{{localize "DXFF.Field.FactionInfo"}}</label>
+          <textarea data-bind="draft.info" rows="5" data-drop="text" placeholder="{{localize "DXFF.Placeholder.FactionInfo"}}">{{draft.info}}</textarea>
+          <p class="dxff-hint">{{localize "DXFF.InfoHint"}}</p>
+        </div>
+        <footer class="dxff-form-footer">
+          <button type="button" data-action="cancelEdit"><i class="fa-solid fa-xmark" inert></i> {{localize "DXFF.Cancel"}}</button>
+          <button type="submit" class="dxff-primary"><i class="fa-solid fa-check" inert></i> {{localize "DXFF.Save"}}</button>
+        </footer>
+      </form>
+      {{else}}
+      <h2 class="dxff-name">{{entry.name}}</h2>
+      <dl class="dxff-facts">
+        {{#if entry.category}}
+        <div><dt><i class="fa-solid fa-tag" inert></i> {{localize "DXFF.Field.Category"}}</dt><dd>{{entry.category}}</dd></div>
+        {{/if}}
+        {{#if sourceHTML}}
+        <div><dt><i class="fa-solid fa-book-open" inert></i> {{localize "DXFF.Source"}}</dt><dd>{{{sourceHTML}}}</dd></div>
+        {{/if}}
+        <div><dt><i class="fa-solid fa-calendar-plus" inert></i> {{localize "DXFF.AddedOn"}}</dt><dd>{{added}}{{#if addedBy}} · {{addedBy}}{{/if}}</dd></div>
+        {{#if knownBy}}
+        <div><dt><i class="fa-solid fa-user-lock" inert></i> {{localize "DXFF.KnownByLabel"}}</dt><dd>{{knownBy}}</dd></div>
+        {{/if}}
+      </dl>
+      {{#if infoHTML}}<div class="dxff-info">{{{infoHTML}}}</div>{{/if}}
+      {{#if hasActions}}
+      <div class="dxff-profile-actions">
+        {{#if canEdit}}<button type="button" data-action="editFace"><i class="fa-solid fa-pen" inert></i> {{localize "DXFF.Edit"}}</button>{{/if}}
+        {{#if canShare}}<button type="button" data-action="shareFace" data-tooltip="{{texts.shareHint}}"><i class="fa-solid fa-users" inert></i> {{texts.share}}</button>{{/if}}
+        {{#if canForget}}<button type="button" class="dxff-danger" data-action="forgetFace"><i class="{{texts.forgetIcon}}" inert></i> {{texts.forget}}</button>{{/if}}
+        {{#if canDelete}}<button type="button" class="dxff-danger" data-action="deleteFace"><i class="fa-solid fa-trash" inert></i> {{texts.remove}}</button>{{/if}}
+      </div>
+      {{/if}}
+      {{/if}}
+    </div>
+  </section>
+
+  <datalist id="{{appId}}-categories">
+    {{#each categoryOptions}}<option value="{{this}}"></option>{{/each}}
+  </datalist>
+
+  {{> "modules/dxcufgbs-familiar-faces/templates/link-list.hbs" membersSection}}
+  {{> "modules/dxcufgbs-familiar-faces/templates/link-list.hbs" placesSection}}
+
+  {{> "modules/dxcufgbs-familiar-faces/templates/notes.hbs"}}
+  {{/if}}
+</div>

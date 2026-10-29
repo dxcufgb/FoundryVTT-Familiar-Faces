@@ -18,7 +18,7 @@
     <ol class="dxff-faces">
       {{#each faces}}
       <li class="dxff-face dxff-kind-{{kind}}" data-entry-id="{{id}}" data-kind="{{kind}}" data-action="openFace" tabindex="0">
-        <div class="dxff-avatar {{#if square}}dxff-square{{/if}}" style="--hue: {{hue}}">
+        <div class="dxff-avatar {{avatarClass}}" style="--hue: {{hue}}">
           {{#if img}}<img src="{{img}}" alt="" loading="lazy">{{else}}<span>{{initials}}</span>{{/if}}
         </div>
         <div class="dxff-face-body">
@@ -42,6 +42,11 @@
         {{#if peopleCount}}
         <div class="dxff-note-count dxff-people-count" data-tooltip="{{peopleHint}}">
           <i class="fa-solid fa-masks-theater" inert></i>{{peopleCount}}
+        </div>
+        {{/if}}
+        {{#if placeCount}}
+        <div class="dxff-note-count dxff-people-count" data-tooltip="{{placeHint}}">
+          <i class="fa-solid fa-map-location-dot" inert></i>{{placeCount}}
         </div>
         {{/if}}
         {{#if noteCount}}

@@ -146,6 +146,16 @@ export function currentSceneName() {
   return scene ? (scene.navName || scene.name) : "";
 }
 
+/** Sorted unique suggestions (case doesn't matter), e.g. the kinds of factions already used. */
+export function uniqueSuggestions(values = []) {
+  const set = new Map();
+  for (const v of values) {
+    const s = cleanLine(v, 120);
+    if (s && !set.has(s.toLowerCase())) set.set(s.toLowerCase(), s);
+  }
+  return [...set.values()].sort((a, b) => a.localeCompare(b));
+}
+
 /** Place suggestions: places already used plus the scenes this user can see. */
 export function placeSuggestions(places = []) {
   const set = new Map();
@@ -197,6 +207,11 @@ export function canAddFaces() {
 
 /** Who may add new places: the same people as for NPCs; a fight doesn't stop anyone from noting where they are. */
 export function canAddPlaces() {
+  return mayAddFaces();
+}
+
+/** Who may add new factions: the same people as for places, combat or not. */
+export function canAddFactions() {
   return mayAddFaces();
 }
 

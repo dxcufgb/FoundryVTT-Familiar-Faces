@@ -1,11 +1,12 @@
 import {
   MODULE_ID, QUEST_LOG_ID, t, escapeHTML, cleanLine, cleanName, imagesIn, imagesInPage, currentSceneName, placeSuggestions,
-  canAddFaces, canAddPlaces, mayAddFaces, combatBlocks, randomId
+  uniqueSuggestions, canAddFaces, canAddPlaces, canAddFactions, mayAddFaces, combatBlocks, randomId
 } from "./util.js";
 import * as store from "./store.js";
 import { EntrySheet } from "./apps/entry-sheet.js";
 import { FaceSheet } from "./apps/face-sheet.js";
 import { PlaceSheet } from "./apps/place-sheet.js";
+import { FactionSheet } from "./apps/faction-sheet.js";
 import { showImage } from "./images.js";
 import { entryOptionsHTML, searchBoxHTML, wireEntrySearch } from "./pickers.js";
 
@@ -16,10 +17,10 @@ const JOURNAL_IMAGE_SCOPE = ".journal-entry-page, .journal-entry-content, .journ
 const EDITING = "input, textarea, select, [contenteditable=''], [contenteditable=true], prose-mirror, .editor-content, #board";
 
 /* -------------------------------------------- */
-/*  "Add NPC" / "Add place" dialog              */
+/*  "Add NPC" / "Add place" / "Add faction"     */
 /* -------------------------------------------- */
 
-/** What differs between adding a face and a place (DXFF.* keys). */
+/** What differs between adding a face, a place and a faction (DXFF.* keys). */
 const ADD = {
   faces: {
     title: "AddFace", icon: "fa-solid fa-user-plus", name: "Field.Name", nameMax: MAX_NAME, where: "metAt", whereLabel: "Field.MetAt",
@@ -30,29 +31,43 @@ const ADD = {
     title: "AddPlace", icon: "fa-solid fa-map-pin", name: "Field.PlaceName", nameMax: 120, where: "region", whereLabel: "Field.Region",
     wherePlaceholder: "Placeholder.Region", info: "Field.PlaceInfo", infoPlaceholder: "Placeholder.PlaceInfo", exists: "PlaceAlreadyExists",
     added: "PlaceAdded", linkSource: "LinkSourcePlace", picture: "Picture", noPicture: "NoPicture"
+  },
+  factions: {
+    title: "AddFaction", icon: "fa-solid fa-shield-halved", name: "Field.FactionName", nameMax: 120, where: "category",
+    whereLabel: "Field.Category", wherePlaceholder: "Placeholder.Category", info: "Field.FactionInfo",
+    infoPlaceholder: "Placeholder.FactionInfo", exists: "FactionAlreadyExists", added: "FactionAdded",
+    linkSource: "LinkSourcePlace", picture: "Picture", noPicture: "NoPicture"
   }
 };
 
+const KINDS = ["faces", "places", "factions"];
+const kindOf = kind => KINDS.includes(kind) ? kind : "faces";
+
 function canAdd(kind) {
-  return kind === "places" ? canAddPlaces() : canAddFaces();
+  if (kind === "places") return canAddPlaces();
+  if (kind === "factions") return canAddFactions();
+  return canAddFaces();
 }
 
 /**
- * Asks for the details of a new face or place and creates it.
- * @param {"faces"|"places"} kind
+ * Asks for the details of a new face, place or faction and creates it.
+ * @param {"faces"|"places"|"factions"} kind
  * @param {object} [prefill]
  * @param {string} [prefill.name]
  * @param {string} [prefill.img]          The picture to preselect.
  * @param {string[]} [prefill.images]     More images to offer (e.g. the images of the journal page).
  * @param {string} [prefill.metAt]        Faces: defaults to the current scene.
  * @param {string} [prefill.region]       Places: the region it is in.
+ * @param {string} [prefill.category]     Factions: what kind of faction it is.
  * @param {string} [prefill.info]
  * @param {{uuid: string, label: string}|null} [prefill.source]
  * @param {string} [prefill.scene]        Places: the uuid of its scene.
  * @returns {Promise<string|null>} the new entry's id
  */
-export async function addEntryDialog(kind, { name = "", img = "", images = [], metAt, region = "", info = "", source = null, scene = "" } = {}) {
-  kind = kind === "places" ? "places" : "faces";
+export async function addEntryDialog(kind, {
+  name = "", img = "", images = [], metAt, region = "", category = "", info = "", source = null, scene = ""
+} = {}) {
+  kind = kindOf(kind);
   const texts = ADD[kind];
   if (!store.ready()) {
     ui.notifications.warn(t("NotReady"));
@@ -74,8 +89,10 @@ export async function addEntryDialog(kind, { name = "", img = "", images = [], m
   const listId = `dxff-add-${kind}-${randomId()}`;
   const places = kind === "faces"
     ? placeSuggestions([...store.allFaces().map(f => f.metAt), ...store.allPlaces().map(p => p.name)])
-    : placeSuggestions([...store.allPlaces().map(p => p.region), ...store.allPlaces().map(p => p.name)]);
-  const where = kind === "faces" ? (metAt ?? currentSceneName()) : region;
+    : kind === "places"
+      ? placeSuggestions([...store.allPlaces().map(p => p.region), ...store.allPlaces().map(p => p.name)])
+      : uniqueSuggestions(store.allFactions().map(f => f.category));
+  const where = kind === "faces" ? (metAt ?? currentSceneName()) : kind === "places" ? region : category;
 
   const imageGrid = choices.length ? `
     <fieldset class="dxff-pick-images">
@@ -164,6 +181,7 @@ export async function addEntryDialog(kind, { name = "", img = "", images = [], m
       source: source && result.linkSource ? source : null
     };
     if (kind === "faces") data.metAt = result.where;
+    else if (kind === "factions") data.category = result.where;
     else {
       data.region = result.where;
       data.scene = scene || (sceneOffer && result.linkScene ? sceneOffer : "");
@@ -187,8 +205,13 @@ export function addPlaceDialog(prefill = {}) {
   return addEntryDialog("places", prefill);
 }
 
+/** The Add faction dialog (see addEntryDialog). */
+export function addFactionDialog(prefill = {}) {
+  return addEntryDialog("factions", prefill);
+}
+
 /* -------------------------------------------- */
-/*  "Add image to NPC / place" dialog           */
+/*  "Add image to NPC / place / faction" dialog */
 /* -------------------------------------------- */
 
 const BIND = {
@@ -199,6 +222,11 @@ const BIND = {
   places: {
     title: "BindPlaceImage", button: "BindPlaceButton", hint: "BindPlaceHint", newEntry: "NewPlaceWithImage", none: "NoPlacesYet",
     search: "SearchPlaces", pick: "PickPlace", done: "PictureSet", icon: "fa-solid fa-image", newIcon: "fa-solid fa-map-pin"
+  },
+  factions: {
+    title: "BindFactionImage", button: "BindPlaceButton", hint: "BindFactionHint", newEntry: "NewFactionWithImage",
+    none: "NoFactionsYet", search: "SearchFactions", pick: "PickFaction", done: "PictureSet", icon: "fa-solid fa-image",
+    newIcon: "fa-solid fa-shield-halved"
   }
 };
 
@@ -217,10 +245,10 @@ function guessEntry(entries, hint) {
  * @param {string} [options.hint]     Text near the image (page name, caption), used to preselect one.
  * @param {string} [options.name]     Name to suggest when a new face or place is made from the image.
  * @param {{uuid: string, label: string}|null} [options.source]
- * @param {"faces"|"places"} [options.kind]
+ * @param {"faces"|"places"|"factions"} [options.kind]
  */
 export async function bindImageDialog(src, { hint = "", name = "", source = null, kind = "faces" } = {}) {
-  kind = kind === "places" ? "places" : "faces";
+  kind = kindOf(kind);
   const texts = BIND[kind];
   if (!game.user.isGM) return;
   if (!store.ready()) return ui.notifications.warn(t("NotReady"));
@@ -302,6 +330,7 @@ function journalImages(entry) {
 
 const MENU_ICON = '<i class="fa-solid fa-masks-theater"></i>';
 const PLACE_ICON = '<i class="fa-solid fa-map-location-dot"></i>';
+const FACTION_ICON = '<i class="fa-solid fa-shield-halved"></i>';
 
 export function registerContextMenus() {
   Hooks.on("getJournalEntryContextOptions", (app, options) => {
@@ -320,6 +349,9 @@ export function registerContextMenus() {
     }, {
       name: "DXFF.Ctx.AddEntryPlace", icon: PLACE_ICON,
       condition: li => usable(li, "places"), callback: li => add(li, "places")
+    }, {
+      name: "DXFF.Ctx.AddEntryFaction", icon: FACTION_ICON,
+      condition: li => usable(li, "factions"), callback: li => add(li, "factions")
     });
   });
 
@@ -342,11 +374,17 @@ export function registerContextMenus() {
       name: "DXFF.Ctx.AddPagePlace", icon: PLACE_ICON,
       condition: li => usable(li, "places"), callback: li => add(li, "places")
     }, {
+      name: "DXFF.Ctx.AddPageFaction", icon: FACTION_ICON,
+      condition: li => usable(li, "factions"), callback: li => add(li, "factions")
+    }, {
       name: "DXFF.Ctx.BindImage", icon: '<i class="fa-solid fa-image-portrait"></i>',
       condition: imagePage, callback: li => bind(li, "faces")
     }, {
       name: "DXFF.Ctx.BindPlaceImage", icon: '<i class="fa-solid fa-image"></i>',
       condition: imagePage, callback: li => bind(li, "places")
+    }, {
+      name: "DXFF.Ctx.BindFactionImage", icon: '<i class="fa-solid fa-image"></i>',
+      condition: imagePage, callback: li => bind(li, "factions")
     });
   });
 }
@@ -438,8 +476,10 @@ function selectionItems(found) {
   const items = [];
   const existing = store.findByName(found.name);
   const place = store.findPlaceByName(found.name);
+  const faction = store.findFactionByName(found.name);
   if (existing) items.push({ icon: "fa-solid fa-address-card", label: t("Ctx.OpenFace", { name: existing.name }), run: () => FaceSheet.open(existing.id) });
   if (place) items.push({ icon: "fa-solid fa-map-location-dot", label: t("Ctx.OpenPlace", { name: place.name }), run: () => PlaceSheet.open(place.id) });
+  if (faction) items.push({ icon: "fa-solid fa-shield-halved", label: t("Ctx.OpenFaction", { name: faction.name }), run: () => FactionSheet.open(faction.id) });
   if (combatBlocks()) {
     items.push({ icon: "fa-solid fa-swords", label: t("Ctx.InCombat"), run: () => ui.notifications.info(t("InCombat")) });
   } else {
@@ -455,6 +495,13 @@ function selectionItems(found) {
       icon: "fa-solid fa-map-pin",
       label: t(place ? "Ctx.AddPlaceNameAgain" : "Ctx.AddPlaceName", { name: found.name }),
       run: () => addEntryDialog("places", { name: found.name, images: found.images, source: link(found.source) })
+    });
+  }
+  if (canAddFactions()) {
+    items.push({
+      icon: "fa-solid fa-shield-halved",
+      label: t(faction ? "Ctx.AddFactionNameAgain" : "Ctx.AddFactionName", { name: found.name }),
+      run: () => addEntryDialog("factions", { name: found.name, images: found.images, source: link(found.source) })
     });
   }
   return items;
@@ -539,6 +586,8 @@ function onImageContextMenu(event) {
     { icon: "fa-solid fa-user-plus", label: t("Ctx.NewFaceWithImage"), run: () => addEntryDialog("faces", { name, img: src, source: link(source) }) },
     { icon: "fa-solid fa-image", label: t("Ctx.BindPlaceImage"), run: () => bindImageDialog(src, { kind: "places", hint, name, source: link(source) }) },
     { icon: "fa-solid fa-map-pin", label: t("Ctx.NewPlaceWithImage"), run: () => addEntryDialog("places", { name, img: src, source: link(source) }) },
+    { icon: "fa-solid fa-image", label: t("Ctx.BindFactionImage"), run: () => bindImageDialog(src, { kind: "factions", hint, name, source: link(source) }) },
+    { icon: "fa-solid fa-shield-halved", label: t("Ctx.NewFactionWithImage"), run: () => addEntryDialog("factions", { name, img: src, source: link(source) }) },
     { icon: "fa-solid fa-expand", label: t("Ctx.ViewImage"), run: () => showImage(src, cleanLine(name || source?.label, 80)) }
   ]);
 }

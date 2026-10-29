@@ -1,4 +1,4 @@
-<div class="dxff-portrait {{#if isPlace}}dxff-portrait-place{{/if}} {{#unless entry.img}}empty{{/unless}}" style="--hue: {{hue}}"
+<div class="dxff-portrait {{#if squarePic}}dxff-portrait-place{{/if}} {{#if isFaction}}dxff-portrait-faction{{/if}} {{#unless entry.img}}empty{{/unless}}" style="--hue: {{hue}}"
      {{#if isGM}}data-drop="portrait" tabindex="0" data-tooltip="{{pic.drop}}"{{/if}}>
   {{#if entry.img}}
   <img src="{{entry.img}}" alt="{{entry.name}}" data-action="viewPortrait">
@@ -8,7 +8,7 @@
   {{#if canPickPlaceholder}}
   <div class="dxff-portrait-tools">
     <button type="button" class="dxff-icon-btn" data-action="pickPlaceholder" data-tooltip="{{pic.pickHint}}"
-            aria-label="{{pic.pick}}"><i class="fa-solid {{#if isPlace}}fa-map{{else}}fa-masks-theater{{/if}}" inert></i></button>
+            aria-label="{{pic.pick}}"><i class="{{lookIcon}}" inert></i></button>
     {{#if isGM}}
     {{#if canBrowse}}
     <button type="button" class="dxff-icon-btn" data-action="browsePortrait" data-tooltip="{{pic.browse}}"

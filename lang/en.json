@@ -3,7 +3,8 @@
     "Title": "Familiar Faces & Places",
     "Tabs": {
       "faces": "Faces",
-      "places": "Places"
+      "places": "Places",
+      "factions": "Factions"
     },
     "Search": "Search NPCs",
     "SearchPlaceholder": "Search names, places, notes…",
@@ -27,7 +28,8 @@
     "GroupBy": {
       "none": "No grouping",
       "place": "Place met",
-      "region": "Region"
+      "region": "Region",
+      "category": "Type of faction"
     },
     "SortBy": {
       "name": "Name",
@@ -39,14 +41,13 @@
     "FilterRegion": "Show the places in this region",
     "NoteCountHint": "Notes you can see: {mine} yours, {others} from others",
     "PeopleCountHint": "People met here: {count}",
-
     "AddFace": "Add NPC",
     "AddFaceHint": "Add someone the party has met",
     "Add": "Add",
     "Added": "{name} was added to Familiar Faces.",
     "AddedOn": "Added",
     "AlreadyExists": "{name} is already in Familiar Faces.",
-    "CannotAdd": "Only the GM can add new NPCs and places.",
+    "CannotAdd": "Only the GM can add new NPCs, places and factions.",
     "InCombat": "No time to make new acquaintances in the middle of a fight. Try again once combat is over.",
     "AddMet": "Add someone you met",
     "AddMetHint": "Someone without a token or character sheet: a name you overheard, someone in the crowd",
@@ -73,7 +74,6 @@
     "Cancel": "Cancel",
     "Save": "Save",
     "Edit": "Edit",
-
     "Field": {
       "MetInfo": "What you know about them",
       "Name": "Name",
@@ -84,7 +84,13 @@
       "PlaceName": "Name",
       "Region": "Located in",
       "PlaceInfo": "What the party knows",
-      "VisitedInfo": "What you know about it"
+      "VisitedInfo": "What you know about it",
+      "FactionName": "Name",
+      "Category": "Type",
+      "FactionInfo": "What the party knows",
+      "KnownFactionInfo": "What you know about it",
+      "Role": "Role in the faction",
+      "PlaceRole": "What the place is to the faction"
     },
     "Placeholder": {
       "MetName": "Their name, or how you'd recognise them",
@@ -97,13 +103,19 @@
       "PlaceInfo": "A short description everyone can see (optional)",
       "VisitedName": "The place's name, or how you'd recognise it",
       "VisitedInfo": "What it looks like, who's there… (optional)",
-      "PlaceNote": "Your notes about this place…"
+      "PlaceNote": "Your notes about this place…",
+      "Category": "A guild, a noble house, a cult…",
+      "FactionInfo": "A short description everyone can see (optional)",
+      "KnownFactionName": "The faction's name, or how you'd recognise it",
+      "KnownFactionInfo": "What they want, who leads them… (optional)",
+      "FactionNote": "Your notes about this faction…",
+      "Role": "Leader, member, informant, enemy…",
+      "PlaceRole": "Headquarters, hideout, territory…"
     },
     "InfoHint": "Shown to every player. Links such as @UUID[…] work.",
     "UseScene": "Use the current scene ({scene})",
     "Source": "Found in",
     "SourceGone": "The journal this NPC came from no longer exists.",
-
     "Portrait": "Portrait",
     "PlaceholderLegend": "Look (until there's a portrait)",
     "PickLook": "Choose a look",
@@ -162,6 +174,32 @@
       "road": "Road or crossroads",
       "portal": "Portal or otherworld"
     },
+    "FactionLooks": {
+      "crown": "Crown or government",
+      "noble": "Noble house",
+      "guild": "Craft guild",
+      "merchants": "Merchants or traders",
+      "thieves": "Thieves' guild",
+      "assassins": "Assassins",
+      "spies": "Spies or informants",
+      "secret": "Secret society",
+      "cult": "Cult",
+      "church": "Church or faith",
+      "knights": "Knightly order",
+      "army": "Army",
+      "mercenaries": "Mercenary company",
+      "watch": "City watch",
+      "mages": "Mages' guild",
+      "scholars": "Scholars or archivists",
+      "pirates": "Pirates",
+      "bandits": "Bandits or outlaws",
+      "rebels": "Rebels",
+      "druids": "Druids or nature circle",
+      "tribe": "Tribe or clan",
+      "council": "Council",
+      "undead": "Undead or necromancers",
+      "monsters": "Monsters or dragons"
+    },
     "NoPortrait": "No portrait",
     "PortraitDropHint": "Drop an image, an actor or a journal image page here to use it as the portrait",
     "BrowsePortrait": "Pick a portrait from the files",
@@ -184,7 +222,6 @@
     "RemovePicture": "Remove picture",
     "PictureSet": "{name} now has this picture.",
     "HasPicture": "Has a picture (it will be replaced)",
-
     "BindImage": "Add image to NPC",
     "BindButton": "Use as portrait",
     "BindHint": "Pick who this is. Double-click a name to use the image right away.",
@@ -197,7 +234,6 @@
     "NewPlaceWithImage": "New place with this image",
     "NoPlacesYet": "There are no places yet; add one with this image.",
     "PickPlace": "Pick a place first.",
-
     "DeleteFace": "Remove",
     "DeleteFaceConfirm": "Remove <b>{name}</b> from Familiar Faces? Everyone's notes about them are removed too.",
     "FaceGone": "This NPC has been removed from Familiar Faces.",
@@ -254,7 +290,66 @@
       "metHere": "First met here",
       "noted": "A note places them here"
     },
-
+    "SearchFactions": "Search factions",
+    "SearchFactionsPlaceholder": "Search factions, members, places, notes…",
+    "NoFactionMatches": "No factions match.",
+    "EmptyFactionsGM": "No factions yet. Select a faction's name in a journal and right-click it, or use Add faction.",
+    "EmptyFactionsPlayer": "No factions yet. The guilds, houses and cults your party learns about will show up here.",
+    "FactionCountHint": "Factions",
+    "UnknownCategory": "Type unknown",
+    "FilterCategory": "Show the factions of this type",
+    "MemberCountHint": "Members: {count}",
+    "FactionPlaceCountHint": "Places: {count}",
+    "AddFaction": "Add faction",
+    "AddFactionHint": "Add a faction the party knows of: a guild, a noble house, a cult…",
+    "FactionAdded": "{name} was added to the factions.",
+    "FactionAlreadyExists": "{name} is already in the factions.",
+    "AddKnownFaction": "Add a faction you know of",
+    "AddKnownFactionHint": "A guild, a house, a gang you've heard of: it goes into your own list",
+    "AddKnownFactionIntro": "A faction you know of: it goes into your own list of factions.",
+    "AddKnownFactionHintPrivate": "Only you (and the GM) see it until you share it with the party.",
+    "FactionAlreadyYours": "{name} is already in your factions.",
+    "FactionAddedForMe": "{name} was added to your factions.",
+    "PickFactionLookHint": "Pick a picture that gives a feel for the faction, until there's a real one",
+    "FactionPictureDropHint": "Drop an image, a tile or a journal image page here to use it as the faction's picture",
+    "BindFactionImage": "Add image to faction",
+    "BindFactionHint": "Pick which faction this is. Double-click a name to use the image right away.",
+    "NewFactionWithImage": "New faction with this image",
+    "NoFactionsYet": "There are no factions yet; add one with this image.",
+    "PickFaction": "Pick a faction first.",
+    "DeleteFactionConfirm": "Remove <b>{name}</b> from the factions? Everyone's notes about it are removed too.",
+    "FactionGone": "This faction has been removed.",
+    "ForgetFaction": "Remove from my factions",
+    "ForgetFactionConfirm": "Remove <b>{name}</b> from your factions? The other players who added it keep it, and your private notes are kept in case you add it again.",
+    "ForgetFactionConfirmLast": "Remove <b>{name}</b> from your factions? Nobody else has added it, so it is removed. Your private notes are kept in case you add it again.",
+    "ShareFactionWithPartyHint": "Put it in every player's factions. “Only me” notes stay private.",
+    "ShareFactionConfirm": "Share <b>{name}</b> with the party? Every player gets it in their factions.",
+    "ShareFactionConfirmEntry": "Name, picture, what kind of faction it is and what's known about it",
+    "SharedFactionWithParty": "{name} is now in every player's factions.",
+    "KnownByFaction": "Only in the factions of: {names}",
+    "FactionsOf": "Factions",
+    "NoFactionsOf": "No factions yet.",
+    "LinkFactions": "Link factions",
+    "LinkFactionsHint": "Link this NPC to factions: the guilds, houses or gangs they belong to",
+    "LinkFactionsPlaceHint": "Link this place to factions: whose headquarters, territory or hideout it is",
+    "LinkFactionsTo": "Link {name} to factions",
+    "LinkFactionsPickHint": "Tick the factions. You can give a role (Leader, Headquarters…) afterwards with the pen.",
+    "NoFactionsToLink": "There are no more factions to link.",
+    "FactionMembers": "Members",
+    "NoFactionMembers": "No members yet. Link the NPCs who belong to this faction.",
+    "FactionPlaces": "Places",
+    "NoFactionPlaces": "No places yet. Link its headquarters, hideouts and territory.",
+    "LinkMembersHint": "Link NPCs to this faction: its leaders, members and allies",
+    "LinkMembersTo": "Link NPCs to {name}",
+    "LinkMembersPickHint": "Tick the people who belong to this faction. Give them a role afterwards with the pen.",
+    "LinkFactionPlacesHint": "Link places to this faction: its headquarters, hideouts and territory",
+    "LinkFactionPlacesTo": "Link places to {name}",
+    "LinkFactionPlacesPickHint": "Tick the places of this faction. Give them a role afterwards with the pen.",
+    "EditRole": "Change the role",
+    "EditRoleTitle": "{name} in {faction}",
+    "NoFactionNotes": "No notes yet. What do you know about this faction?",
+    "NotifyFactionCreated": "New faction: <b>{name}</b>",
+    "NotifyFactionSharedBy": "{by} shared the faction <b>{name}</b> with the party.",
     "Notes": "Notes",
     "NoteFilterLabel": "Show notes",
     "NoteFilter": {
@@ -278,7 +373,6 @@
     "CtrlEnterSave": "Ctrl+Enter to save, Esc to cancel",
     "GMSeesShared": "The GM can read every note. Other players never see your “Only me” notes in Familiar Faces & Places.",
     "PickPlayers": "Pick at least one player to share with.",
-
     "WhoSees": "Who can read this note",
     "Vis": {
       "private": "Only me",
@@ -291,11 +385,9 @@
       "everyoneShort": "Party",
       "someShort": "Shared with {names}"
     },
-
     "UnknownUser": "Someone",
     "StoreShared": "Familiar Faces & Places (shared)",
     "StorePrivate": "Familiar Faces & Places – {name}'s notes",
-
     "NotifyCreated": "New NPC: <b>{name}</b>",
     "NotifySharedBy": "{by} shared <b>{name}</b> with the party.",
     "NotifyPlaceCreated": "New place: <b>{name}</b>",
@@ -303,12 +395,10 @@
     "NotifyPortrait": "<b>{name}</b> has a new portrait.",
     "NotifyPicture": "<b>{name}</b> has a new picture.",
     "NotifyNote": "{by} shared a note about <b>{name}</b>.",
-
     "NotAnImage": "That file is not an image.",
     "NoUploadPermission": "You don't have permission to upload files.",
     "UploadFailed": "The upload failed.",
     "UploadError": "Could not upload {name}: {error}",
-
     "Ctx": {
       "AddName": "Add “{name}” to Familiar Faces",
       "AddNameAgain": "Add another “{name}”",
@@ -329,17 +419,23 @@
       "InCombat": "In combat – no time for new acquaintances",
       "AddNpcForAll": "Add {name} to Familiar Faces for all players",
       "AddActor": "Add to Familiar Faces",
-      "AddScene": "Add to Familiar Places"
+      "AddScene": "Add to Familiar Places",
+      "AddFactionName": "Add “{name}” as a faction",
+      "AddFactionNameAgain": "Add another faction “{name}”",
+      "OpenFaction": "Open {name}",
+      "AddEntryFaction": "Add as a faction",
+      "AddPageFaction": "Add as a faction",
+      "BindFactionImage": "Add image to faction…",
+      "NewFactionWithImage": "New faction with this image…"
     },
-
     "Settings": {
       "Notify": {
         "Name": "Notifications",
-        "Hint": "Tell players when someone or some place new is added, gets a picture, or a note is shared with them."
+        "Hint": "Tell players when someone, some place or a faction is added, gets a picture, or a note is shared with them."
       },
       "PlayersCanAdd": {
-        "Name": "Players can add NPCs and places",
-        "Hint": "Let players add people and places to Familiar Faces & Places themselves (Add NPC and Add place buttons, right-click on a selected name). Portraits and pictures stay GM-only."
+        "Name": "Players can add NPCs, places and factions",
+        "Hint": "Let players add people, places and factions to Familiar Faces & Places themselves (the Add buttons, right-click on a selected name). Portraits and pictures stay GM-only."
       },
       "ImageFolder": {
         "Name": "Picture upload folder",
@@ -360,6 +456,10 @@
       "TokenMenu": {
         "Name": "Right-click NPC tokens",
         "Hint": "Players: right-clicking an NPC's token offers to add them to your own Familiar Faces (hold Shift to skip it). GM: a Familiar Faces button on NPC token HUDs adds them for all players."
+      },
+      "QuestLogLinks": {
+        "Name": "Link notes to the Quest log",
+        "Hint": "With Dxcufgb's Quest log active, a new note about an NPC, place or faction links the quests, quest rewards and party notes it mentions by name (the first mention of each). Only entries the note's author can see in the Quest log are linked."
       }
     }
   }

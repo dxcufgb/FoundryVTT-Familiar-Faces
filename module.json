@@ -1,8 +1,8 @@
 {
   "id": "dxcufgbs-familiar-faces",
   "title": "Dxcufgb's Familiar Faces & Places",
-  "description": "A sidebar tab of everyone the party has met and every place they have been, with a Faces list and a Places list. The GM adds NPCs and places from the journals (select a name and right-click it, or right-click a journal or page), NPCs from the Actors directory or an NPC's token, places from the Scenes directory, and gives them pictures by right-clicking journal images. Players add the NPCs they meet by right-clicking a token and the places they visit to their own lists, and keep notes about each NPC and place: private, shared with the party, or with chosen players. NPCs and places link to each other: a place shows the people met there, an NPC the places they belong to. Search everything, group NPCs by where they were met and places by region, and use it alongside Dxcufgb's Quest log.",
-  "version": "1.1.0",
+  "description": "A sidebar tab of everyone the party has met and every place they have been, with a Faces, a Places and a Factions list. The GM adds NPCs and places from the journals (select a name and right-click it, or right-click a journal or page), NPCs from the Actors directory or an NPC's token, places from the Scenes directory, and gives them pictures by right-clicking journal images. Players add the NPCs they meet by right-clicking a token and the places they visit to their own lists, and keep notes about each NPC and place: private, shared with the party, or with chosen players. NPCs and places link to each other: a place shows the people met there, an NPC the places they belong to. Factions (guilds, houses, cults) link to any number of NPCs and places, each with a role, and have notes of their own. Search everything, group NPCs by where they were met and places by region, and use it alongside Dxcufgb's Quest log: new notes link the quests, rewards and party notes they mention.",
+  "version": "1.2.0",
   "authors": [
     {
       "name": "Dxcufgb",

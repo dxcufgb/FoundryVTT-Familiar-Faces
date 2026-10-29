@@ -854,3 +854,24 @@ body.theme-light #dxff-context-menu { background: #f6f1e7; }
 .dxff-sheet .dxff-link-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .dxff-sheet .dxff-link-item .dxff-icon-btn { width: 20px; height: 20px; font-size: 10px; }
 .dxff-sheet .dxff-link-list .dxff-no-notes { flex: 1; }
+
+/* ---------- Factions ---------- */
+/* Factions have crests: square at the top, rounded at the bottom. */
+.dxff .dxff-avatar.dxff-crest { border-radius: 6px 6px 50% 50% / 6px 6px 38% 38%; }
+.dxff .dxff-avatar.dxff-crest img { object-position: center; }
+.dxff-sheet .dxff-portrait.dxff-portrait-faction { width: 170px; aspect-ratio: 1; }
+
+/* The role of an NPC or place in a faction, after its name on the pill. */
+.dxff-sheet .dxff-link-role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 14em;
+  color: var(--dxff-muted);
+  font-size: 0.9em;
+}
+.dxff-sheet .dxff-link-role::before { content: "· "; }
+
+/* Three lists in the switch: let the labels shrink in a narrow sidebar. */
+.dxff-tab .dxff-tab-btn { min-width: 0; padding: 0 6px; }
+.dxff-tab .dxff-tab-btn > span:not(.dxff-count) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
