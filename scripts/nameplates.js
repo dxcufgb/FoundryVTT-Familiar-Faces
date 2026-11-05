@@ -1,6 +1,7 @@
 import { MODULE_ID, isResponsibleGM, cleanLine } from "./util.js";
 import * as store from "./store.js";
 import { isNPC } from "./npcs.js";
+import { crumb, noteError } from "./debug-recorder.js";
 
 /*
  * Nameplates of NPCs the whole party knows. When a face is in every player's Familiar Faces (the GM added it for
@@ -79,14 +80,25 @@ export async function syncNameplates() {
     await scene.updateEmbeddedDocuments("Token", updates);
     tokens += updates.length;
   }
+  crumb("nameplates.sync", { prototypes: actorUpdates.length, tokens, names: targets.names.size, actors: targets.actorIds.size });
   if (actorUpdates.length || tokens) {
     console.log(`${MODULE_ID} | names on hover: ${actorUpdates.length} prototype token(s), ${tokens} placed token(s)`);
   }
 }
 
 const queueSync = foundry.utils.debounce(() => {
-  syncNameplates().catch(err => console.error(`${MODULE_ID} | nameplates`, err));
+  syncNameplates().catch(err => {
+    console.error(`${MODULE_ID} | nameplates`, err);
+    noteError("nameplates");
+  });
 }, 600);
+
+/** For the debug snapshot: how many party-known names and NPC actors the nameplate sync matches. */
+export function nameplateTargetCounts() {
+  if (!store.ready()) return null;
+  const { names, actorIds } = knownTargets();
+  return { names: names.size, actors: actorIds.size };
+}
 
 export function requestNameplateSync() {
   queueSync();
@@ -106,6 +118,7 @@ export function registerNameplateHooks() {
       if (tokenMatches(tokenDoc, knownTargets())) tokenDoc.updateSource({ displayName: modes().HOVER });
     } catch (err) {
       console.error(`${MODULE_ID} | preCreateToken`, err);
+      noteError("preCreateToken");
     }
   });
 }

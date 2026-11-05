@@ -1,4 +1,5 @@
 import { MODULE_ID, t, randomId, escapeHTML } from "./util.js";
+import { crumb } from "./debug-recorder.js";
 
 /*
  * Portraits. Only GMs (and users with Foundry's "Upload new files" permission) upload; files go to the world's
@@ -74,6 +75,8 @@ async function prepare(file) {
 export async function uploadImage(file) {
   if (!canUpload()) throw new Error(t("NoUploadPermission"));
   const prepared = await prepare(file);
+  const type = prepared.type?.split("/")[1] ?? "";
+  crumb("image.upload", { type: /^[a-z0-9.+-]{1,20}$/.test(type) ? type : "other" });
   const folder = await ensureFolder();
   const FP = foundry.applications.apps.FilePicker.implementation;
   const response = await FP.upload("data", folder, prepared, {}, { notify: false });

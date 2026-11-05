@@ -1,5 +1,6 @@
 import { MODULE_ID, VISIBILITY, t, isResponsibleGM, randomId, cleanLine, combatBlocks } from "./util.js";
 import { autoLinkQuestLog } from "./quest-links.js";
+import { crumb } from "./debug-recorder.js";
 
 /*
  * Everything lives in the flags of journal entries that the module creates and hides from the Journal directory:
@@ -305,6 +306,10 @@ export async function createEntry(kind, { name, knownBy = null, ...rest } = {}) 
   if (fields.scene) data.scene = fields.scene;
   const knowers = Array.isArray(knownBy) ? [...new Set(knownBy.filter(Boolean))] : null;
   if (knowers?.length) data.knownBy = Object.fromEntries(knowers.map(userId => [userId, true]));
+  crumb("entry.create", {
+    kind, forParty: !knowers?.length, knowers: knowers?.length ?? 0, hasImage: !!data.img, hasSource: !!data.source,
+    hasActor: !!data.actor, hasScene: !!data.scene
+  });
   await write(getShared(), { [`${entriesPath(kind)}.${id}`]: data }, { type: "created", kind, id, name: clean });
   return id;
 }
@@ -334,6 +339,7 @@ export async function shareEntryWithParty(kind, id) {
   const entry = getEntry(kind, id, { any: game.user.isGM });
   if (!entry) throw new Error(t(GONE[kind]));
   if (!canShareEntry(entry)) return false;
+  crumb("entry.share", { kind, knowersBefore: entry.knownBy?.length ?? 0 });
   await write(getShared(), {
     [`${entriesPath(kind)}.${id}.-=knownBy`]: null,
     [`${entriesPath(kind)}.${id}.updatedAt`]: Date.now()
@@ -370,6 +376,7 @@ export async function forgetEntry(kind, id) {
   kind = kindOf(kind);
   const entry = getEntry(kind, id);
   if (!canForgetEntry(entry)) return false;
+  crumb("entry.forget", { kind, lastKnower: entry.knownBy.every(userId => userId === game.user.id) });
   if (entry.knownBy.every(userId => userId === game.user.id)) {
     await write(getShared(), removalChanges(kind, id), { type: "deleted", kind, id });
     return true;
@@ -400,7 +407,10 @@ export async function deleteEntry(kind, id) {
   kind = kindOf(kind);
   const shared = getShared();
   if (!shared) return;
-  await write(shared, removalChanges(kind, id), { type: "deleted", kind, id });
+  const changes = removalChanges(kind, id);
+  // How many link keys the removal also clears (the entry itself and its shared notes are the first two).
+  crumb("entry.delete", { kind, linksRemoved: Math.max(0, Object.keys(changes).length - 2), asGM: game.user.isGM });
+  await write(shared, changes, { type: "deleted", kind, id });
   const stores = game.user.isGM
     ? game.journal.filter(j => j.getFlag(MODULE_ID, "store") === "private")
     : [getPrivate()].filter(Boolean);
@@ -731,6 +741,7 @@ export async function addEntryNote(kind, entryId, { text = "", place = "", visib
   if (!data.text && !data.place) return null;
   const users = cleanUserIds(sharedWith);
   if (!VISIBILITY.includes(visibility) || (visibility === "some" && !users.length)) visibility = "private";
+  crumb("note.add", { kind, visibility, sharedWith: visibility === "some" ? users.length : 0, hasPlace: !!data.place });
   const path = `${notesPath(kind)}.${entryId}.${id}`;
   if (visibility === "private") {
     const doc = getPrivate();
@@ -763,6 +774,7 @@ export async function updateEntryNote(kind, entryId, noteId, where, { text, plac
   else delete next.sharedWith;
 
   const path = `${notesPath(kind)}.${entryId}.${noteId}`;
+  crumb("note.update", { kind, from: where === "private" ? "private" : "shared", to: target, moved: targetWhere !== where });
   if (targetWhere === where) {
     const update = { [`${path}.text`]: next.text, [`${path}.editedAt`]: next.editedAt };
     if (kind === "faces") update[`${path}.place`] = next.place;

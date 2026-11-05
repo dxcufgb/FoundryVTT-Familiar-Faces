@@ -13,6 +13,7 @@ import { addVisitedPlaceDialog } from "../places.js";
 import { addKnownFactionDialog } from "../factions.js";
 import { avatarClass } from "../pickers.js";
 import { browseImage, shareImage } from "../images.js";
+import { crumb } from "../debug-recorder.js";
 
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { AbstractSidebarTab } = foundry.applications.sidebar;
@@ -297,6 +298,9 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
 
   async _onRender(context, options) {
     await super._onRender(context, options);
+    crumb("app.render", {
+      app: "tab", list: this.mode, popout: !!this.isPopout, first: !!options.isFirstRender, parts: (options.parts ?? []).length
+    });
     const input = this.element.querySelector("input[name=search]");
     if (input && options.parts?.includes("header")) {
       input.addEventListener("input", foundry.utils.debounce(event => {

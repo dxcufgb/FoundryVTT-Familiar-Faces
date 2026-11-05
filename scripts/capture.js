@@ -9,6 +9,7 @@ import { PlaceSheet } from "./apps/place-sheet.js";
 import { FactionSheet } from "./apps/faction-sheet.js";
 import { showImage } from "./images.js";
 import { entryOptionsHTML, searchBoxHTML, wireEntrySearch } from "./pickers.js";
+import { crumb, noteError } from "./debug-recorder.js";
 
 const { DialogV2 } = foundry.applications.api;
 const MAX_NAME = 80;
@@ -168,6 +169,7 @@ export async function addEntryDialog(kind, {
     }
   });
   if (!result || result === "cancel" || typeof result !== "object") return null;
+  crumb("dialog.add", { kind, hasImage: !!result.img, linkSource: !!(source && result.linkSource), prefilledImages: images.length });
   const finalName = cleanName(result.name, texts.nameMax);
   if (!finalName) {
     ui.notifications.warn(t("NameRequired"));
@@ -287,6 +289,7 @@ export async function bindImageDialog(src, { hint = "", name = "", source = null
   });
 
   if (result === null || result === undefined || result === "cancel") return;
+  crumb("dialog.bindImage", { kind, choice: result === "new" ? "new" : "bind", entries: entries.length, guessed: !!guess });
   if (result === "new") return addEntryDialog(kind, { name, img: src, source });
   const entry = store.getEntry(kind, result);
   if (!entry) return ui.notifications.warn(t(texts.pick));
@@ -518,7 +521,9 @@ function onSelectionContextMenu(event) {
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
-  showMenu(event.clientX, event.clientY, selectionItems(found));
+  const items = selectionItems(found);
+  crumb("menu.selection", { items: items.length, inQuestLogMenu: false, fromPage: !!found.source?.page });
+  showMenu(event.clientX, event.clientY, items);
 }
 
 /*
@@ -531,6 +536,7 @@ function injectIntoQuestLogMenu(menu) {
   const ol = menu.querySelector("ol");
   if (!found || !ol || ol.querySelector("[data-dxff-item]")) return;
   const items = selectionItems(found);
+  crumb("menu.selection", { items: items.length, inQuestLogMenu: true, fromPage: !!found.source?.page });
   ol.insertAdjacentHTML("beforeend", `<li class="dxql-ctx-sep" role="separator"></li>${items.map(itemHTML).join("")}`);
   for (const li of ol.querySelectorAll("[data-dxff-item]")) {
     li.addEventListener("click", event => {
@@ -543,8 +549,11 @@ function injectIntoQuestLogMenu(menu) {
   if (rect.bottom > window.innerHeight - 8) menu.style.top = `${Math.max(8, window.innerHeight - rect.height - 8)}px`;
 }
 
+let questLogMenuWatched = false;
+
 function watchQuestLogMenu() {
   if (!game.modules.get(QUEST_LOG_ID)?.active) return;
+  questLogMenuWatched = true;
   new MutationObserver(records => {
     for (const record of records) {
       for (const node of record.addedNodes) {
@@ -553,6 +562,7 @@ function watchQuestLogMenu() {
             injectIntoQuestLogMenu(node);
           } catch (err) {
             console.error(`${MODULE_ID} | quest log menu`, err);
+            noteError("questLogMenu");
           }
         }
       }
@@ -581,6 +591,7 @@ function onImageContextMenu(event) {
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
+  crumb("menu.image", { fromPage: !!source?.page, hasCaption: !!caption });
   showMenu(event.clientX, event.clientY, [
     { icon: "fa-solid fa-image-portrait", label: t("Ctx.BindImage"), run: () => bindImageDialog(src, { hint, name, source: link(source) }) },
     { icon: "fa-solid fa-user-plus", label: t("Ctx.NewFaceWithImage"), run: () => addEntryDialog("faces", { name, img: src, source: link(source) }) },
@@ -600,4 +611,9 @@ export function registerPointerMenus() {
   document.addEventListener("contextmenu", onImageContextMenu, true);
   document.addEventListener("contextmenu", onSelectionContextMenu, true);
   watchQuestLogMenu();
+}
+
+/** For the debug snapshot: whether our own right-click menu is open and whether the Quest log's menu is watched. */
+export function menuState() {
+  return { menuOpen: !!menuEl, questLogMenuWatched };
 }

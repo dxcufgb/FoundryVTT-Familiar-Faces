@@ -88,6 +88,10 @@ System-agnostic. No build step and no npm dependencies.
   menu (registered at init) wins the event; a MutationObserver adds our items to `#dxql-context-menu` instead.
 - `scripts/images.js` – portrait upload (direct only; GMs / FILES_UPLOAD), file picker, image from drop data,
   ImagePopout show / share.
+- `scripts/debug-recorder.js` – optional integration with Dxcufgb's Debug Recorder (`dxcufgbs-debug-recorder`, not a
+  dependency): `crumb(key, data)` breadcrumbs (no-op unless it is recording), `noteError(code)` (counts caught errors by
+  a fixed code for the snapshot) and `registerDebugRecorder({ snapshot })`, called in `ready` with `debugSnapshot` from
+  `main.js`. Load order doesn't matter: it listens for `dxcufgbs-debug-recorder.ready` from import time and registers once.
 - `scripts/search.js` – word-AND search over name, met-at, info, and the places and text of visible notes.
 - `scripts/util.js` – constants, `t()`, `escapeHTML`, `enrich` (escape → `<br>` → enrichHTML), helpers.
 - `templates/*.hbs` (`visibility.hbs` is a partial loaded at init), `styles/familiar-faces.css` (theme tokens on
@@ -116,5 +120,9 @@ System-agnostic. No build step and no npm dependencies.
 - **Escaping**: user text is stored plain and rendered through `enrich()` (escapes first) or `highlight()`; any other
   interpolation into HTML (dialogs, notifications, our context menu) must use `escapeHTML`.
 - **One client acts**: `ensureStores` / `ensurePrivateStore` run only where `isResponsibleGM()`.
+- **Debug Recorder**: debug-recorder integration is optional; snapshot/breadcrumb data must never contain names, free
+  text, image paths or URLs (no NPC, place or faction names, met-at / region / type, info, notes, roles, user names,
+  search text, scene or journal names). Only counts, booleans, numbers and this module's own enum values; document ids
+  only as `docId` / `docIds`. A recorder error must never break this module.
 - **Right-click menus**: never swallow a right-click that isn't on a short selection or a journal image; Shift always
   bypasses; text inputs and editors are excluded.
