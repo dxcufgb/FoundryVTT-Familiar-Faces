@@ -3,6 +3,7 @@ import * as store from "./store.js";
 import { FaceSheet } from "./apps/face-sheet.js";
 import { showMenu } from "./capture.js";
 import { placeholderGridHTML, isPlaceholder } from "./placeholders.js";
+import { crumb, noteError } from "./debug-recorder.js";
 
 /*
  * NPCs on the canvas and in the Actors directory:
@@ -69,6 +70,8 @@ export async function addNpcForMe(npc) {
   }
   try {
     const existing = existingFace(npc);
+    const outcome = existing && store.canSeeFace(existing) ? "open" : existing ? "addKnower" : "create";
+    crumb("npc.add", { scope: "me", outcome, hasImage: !!npc.img, hasActor: !!npc.actor });
     if (existing && store.canSeeFace(existing)) {
       FaceSheet.open(existing.id);
       return existing.id;
@@ -168,6 +171,7 @@ export async function addNpcForAll(npc) {
   if (!game.user.isGM || !npc?.name) return null;
   try {
     const existing = existingFace(npc);
+    crumb("npc.add", { scope: "party", outcome: !existing ? "create" : !existing.knownBy ? "open" : "share", hasImage: !!npc.img, hasActor: !!npc.actor });
     if (!existing) {
       const id = await store.createFace(npc);
       ui.notifications.info(t("Added", { name: escapeHTML(npc.name) }));
@@ -237,11 +241,13 @@ function onCanvasContextMenu(event) {
     if (!token?.document || !isNPC(token.actor)) return;
     const items = tokenMenuItems(token);
     if (!items.length) return;
+    crumb("menu.token", { items: items.length, inCombat: combatBlocks() });
     event.preventDefault();
     event.stopPropagation();
     showMenu(event.clientX, event.clientY, items);
   } catch (err) {
     console.error(`${MODULE_ID} | token menu`, err);
+    noteError("tokenMenu");
   }
 }
 
@@ -277,6 +283,7 @@ function onRenderTokenHUD(hud, html) {
     column.append(button);
   } catch (err) {
     console.error(`${MODULE_ID} | token HUD`, err);
+    noteError("tokenHUD");
   }
 }
 

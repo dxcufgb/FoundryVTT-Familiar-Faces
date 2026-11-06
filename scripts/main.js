@@ -1,5 +1,5 @@
 import {
-  MODULE_ID, QUEST_LOG_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM, combatBlocks, mayAddFaces
+  MODULE_ID, QUEST_LOG_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM, combatBlocks, mayAddFaces, inCombat
 } from "./util.js";
 import * as store from "./store.js";
 import { FacesTab, MODES, GROUP_MODES, PLACE_GROUP_MODES, FACTION_GROUP_MODES, SORT_MODES } from "./apps/faces-tab.js";
@@ -8,13 +8,14 @@ import { FaceSheet } from "./apps/face-sheet.js";
 import { PlaceSheet } from "./apps/place-sheet.js";
 import { FactionSheet } from "./apps/faction-sheet.js";
 import {
-  registerContextMenus, registerPointerMenus, addFaceDialog, addPlaceDialog, addFactionDialog, bindImageDialog
+  registerContextMenus, registerPointerMenus, addFaceDialog, addPlaceDialog, addFactionDialog, bindImageDialog, menuState
 } from "./capture.js";
 import { registerNpcHooks, registerTokenMenu, addNpcForMe, addNpcForAll, npcFromToken, npcFromActor } from "./npcs.js";
 import { registerPlaceHooks, addPlaceForAll, placeFromScene } from "./places.js";
-import { registerNameplateHooks, requestNameplateSync, syncNameplates } from "./nameplates.js";
-import { linkMentions, questLogTargets } from "./quest-links.js";
+import { registerNameplateHooks, requestNameplateSync, syncNameplates, nameplateTargetCounts } from "./nameplates.js";
+import { linkMentions, questLogTargets, questLogActive } from "./quest-links.js";
 import { canPickPlaceholder, isPlaceholder } from "./placeholders.js";
+import { crumb, noteError, errorSummary, registerDebugRecorder } from "./debug-recorder.js";
 
 /* -------------------------------------------- */
 /*  Settings and the sidebar tab                */
@@ -175,6 +176,8 @@ const GONE_TEXT = { faces: "FaceGone", places: "PlaceGone", factions: "FactionGo
 const GM_FIELDS = ["source", "actor", "scene"];
 
 function refuse(key, data) {
+  // The refusal's text key (one of this module's own, e.g. "Api.GMOnly"), never its data (names).
+  crumb("api.refused", { reason: key });
   ui.notifications.warn(t(key, data));
 }
 
@@ -389,6 +392,94 @@ function apiFactionLinkChange(change) {
 }
 
 /* -------------------------------------------- */
+/*  Debug Recorder snapshot (optional)          */
+/* -------------------------------------------- */
+
+/** The event types this module puts in its journal updates' options (store.js); anything else is reported as "other". */
+const EVENT_TYPES = new Set(["created", "updated", "image", "known", "forgot", "deleted", "linked", "unlinked", "note", "noteEdited"]);
+const eventType = type => (typeof type !== "string" || !type ? "none" : EVENT_TYPES.has(type) ? type : "other");
+
+/** A module version as reported (e.g. "1.2.0"), only when it is a plain numeric version; otherwise null. */
+const versionString = v => (typeof v === "string" && /^\d{1,4}(\.\d{1,6}){1,3}$/.test(v) ? v : null);
+
+/**
+ * What Dxcufgb's Debug Recorder stores about Familiar Faces & Places when the GM records. Only counts, booleans and
+ * this module's own enum values: never names, met-at / region / type texts, info, notes, roles, image paths or URLs.
+ * Counts are what this client can see (a player's lists and notes), like the tab.
+ */
+function debugSnapshot() {
+  const ready = store.ready();
+  const kinds = {};
+  for (const kind of store.KINDS) {
+    const all = ready ? store.allEntries(kind) : [];
+    const notes = ready ? [...store.visibleNotesBy(kind).values()].flat() : [];
+    const info = {
+      total: all.length,
+      forParty: all.filter(e => !e.knownBy).length,
+      ownListOnly: all.filter(e => e.knownBy).length,
+      withImage: all.filter(e => e.img && !isPlaceholder(e.img)).length,
+      withPlaceholder: all.filter(e => isPlaceholder(e.img)).length,
+      withSource: all.filter(e => e.source).length,
+      notes: {
+        total: notes.length,
+        byVisibility: Object.fromEntries(VISIBILITY.map(v => [v, notes.filter(n => n.visibility === v).length])),
+        withQuestLogLinks: notes.filter(n => /@(Quest|Reward|PartyNote)\[/.test(n.text)).length
+      }
+    };
+    if (game.user.isGM && ready) info.allIncludingOtherPlayers = store.everyEntry(kind).length;
+    if (kind === "faces") info.withActor = all.filter(e => e.actor).length;
+    if (kind === "places") {
+      info.withScene = all.filter(e => e.scene).length;
+      info.handLinks = all.reduce((n, e) => n + e.links.length, 0);
+    }
+    if (kind === "factions") {
+      info.memberLinks = all.reduce((n, e) => n + e.links.length, 0);
+      info.placeLinks = all.reduce((n, e) => n + e.placeLinks.length, 0);
+    }
+    kinds[kind] = info;
+  }
+  const openSheets = Object.fromEntries(store.KINDS.map(kind => [kind, 0]));
+  for (const app of foundry.applications.instances.values()) {
+    if (app instanceof EntrySheet && app.rendered) openSheets[app.kind] = (openSheets[app.kind] ?? 0) + 1;
+  }
+  const privateStores = (game.journal ?? []).filter(j => j.getFlag(MODULE_ID, "store") === "private");
+  return {
+    isGM: game.user.isGM,
+    responsibleGM: isResponsibleGM(),
+    activeGMPresent: !!game.users.activeGM,
+    canUploadFiles: !!game.user.can?.("FILES_UPLOAD"),
+    mayAdd: mayAddFaces(),
+    inCombat: inCombat(),
+    combatBlocksAdding: combatBlocks(),
+    stores: {
+      shared: !!store.getShared(),
+      sharedCount: (game.journal ?? []).filter(j => j.getFlag(MODULE_ID, "store") === "shared").length,
+      ownPrivate: store.privateReady(),
+      // GMs receive every user's private store; players only their own.
+      privateVisible: privateStores.length,
+      usersWithoutPrivate: game.user.isGM ? game.users.filter(u => !store.getPrivate(u.id)).length : null
+    },
+    kinds,
+    nameplates: game.user.isGM ? nameplateTargetCounts() : null,
+    ui: {
+      tabRendered: !!ui.familiarfaces?.rendered,
+      popoutRendered: !!ui.familiarfaces?.popout?.rendered,
+      list: FacesTab.mode,
+      searchActive: Object.fromEntries(MODES.map(m => [m, !!FacesTab.searches?.[m]])),
+      collapsedGroups: FacesTab.collapsed?.size ?? 0,
+      openSheets,
+      ...menuState()
+    },
+    integrations: {
+      questLog: !!game.modules.get(QUEST_LOG_ID)?.active,
+      questLogApi: questLogActive(),
+      questLogVersion: game.modules.get(QUEST_LOG_ID)?.active ? versionString(game.modules.get(QUEST_LOG_ID).version) : null
+    },
+    errors: errorSummary()
+  };
+}
+
+/* -------------------------------------------- */
 /*  Hooks                                       */
 /* -------------------------------------------- */
 
@@ -406,6 +497,7 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", async () => {
+  registerDebugRecorder({ snapshot: debugSnapshot });
   try {
     registerPointerMenus();
     registerTokenMenu();
@@ -491,8 +583,10 @@ Hooks.once("ready", async () => {
       // Dxcufgb's Quest log: the links a new note would get
       linkQuestLog: text => linkMentions(text, questLogTargets())
     };
+    crumb("module.ready", { responsibleGM: isResponsibleGM(), storesReady: store.ready(), privateReady: store.privateReady() });
   } catch (err) {
     console.error(`${MODULE_ID} | ready`, err);
+    noteError("ready");
   }
 });
 
@@ -505,10 +599,19 @@ for (const hook of ["createJournalEntry", "deleteJournalEntry"]) {
 Hooks.on("updateJournalEntry", (doc, changes, options, userId) => {
   try {
     if (!store.isStore(doc)) return;
+    const event = options?.[MODULE_ID];
+    // Only this module's own event type and kind (enums), which store, and whether this client wrote it: never names.
+    crumb("store.update", {
+      event: eventType(event?.type),
+      kind: store.KINDS.includes(event?.kind) ? event.kind : "none",
+      store: doc.getFlag(MODULE_ID, "store") === "shared" ? "shared" : "private",
+      own: userId === game.user.id
+    });
     refreshAll();
-    notifyChange(options?.[MODULE_ID], userId);
+    notifyChange(event, userId);
   } catch (err) {
     console.error(`${MODULE_ID} | updateJournalEntry`, err);
+    noteError("updateJournalEntry");
   }
 });
 
@@ -519,7 +622,10 @@ Hooks.on("createUser", user => {
 
 // The responsible GM changed (the first GM logged out): make sure the stores exist.
 Hooks.on("userConnected", () => {
-  if (isResponsibleGM()) store.ensureStores().catch(err => console.error(`${MODULE_ID} | stores`, err));
+  if (isResponsibleGM()) store.ensureStores().catch(err => {
+    console.error(`${MODULE_ID} | stores`, err);
+    noteError("ensureStores");
+  });
 });
 
 // Keep the storage journals out of the Journal directory; they're managed from the Familiar Faces & Places tab.

@@ -1,4 +1,5 @@
 import { MODULE_ID, QUEST_LOG_ID, escapeRegExp } from "./util.js";
+import { crumb, noteError } from "./debug-recorder.js";
 
 /*
  * With Dxcufgb's Quest log active, a new note about an NPC, place or faction gets links to the Quest log entries it
@@ -97,9 +98,13 @@ export function linkMentions(text, targets = questLogTargets()) {
 export function autoLinkQuestLog(text) {
   if (!enabled()) return text;
   try {
-    return linkMentions(text);
+    const linked = linkMentions(text);
+    const count = s => (String(s).match(/@(Quest|Reward|PartyNote)\[/g) ?? []).length;
+    crumb("questLog.autoLink", { links: count(linked) - count(text) });
+    return linked;
   } catch (err) {
     console.error(`${MODULE_ID} | quest log links`, err);
+    noteError("questLogLinks");
     return text;
   }
 }
