@@ -122,7 +122,8 @@ System-agnostic. No build step and no npm dependencies.
 - **One client acts**: `ensureStores` / `ensurePrivateStore` run only where `isResponsibleGM()`.
 - **Debug Recorder**: debug-recorder integration is optional; snapshot/breadcrumb data must never contain names, free
   text, image paths or URLs (no NPC, place or faction names, met-at / region / type, info, notes, roles, user names,
-  search text, scene or journal names). Only counts, booleans, numbers and this module's own enum values; document ids
-  only as `docId` / `docIds`. A recorder error must never break this module.
+  search text, scene or journal names). Only counts, booleans, numbers, this module's own enum values (fixed lists, e.g.
+  the store event types in `EVENT_TYPES`) and plain numeric module version strings; document ids only as `docId` /
+  `docIds`. A recorder error must never break this module.
 - **Right-click menus**: never swallow a right-click that isn't on a short selection or a journal image; Shift always
   bypasses; text inputs and editors are excluded.

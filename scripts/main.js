@@ -395,6 +395,13 @@ function apiFactionLinkChange(change) {
 /*  Debug Recorder snapshot (optional)          */
 /* -------------------------------------------- */
 
+/** The event types this module puts in its journal updates' options (store.js); anything else is reported as "other". */
+const EVENT_TYPES = new Set(["created", "updated", "image", "known", "forgot", "deleted", "linked", "unlinked", "note", "noteEdited"]);
+const eventType = type => (typeof type !== "string" || !type ? "none" : EVENT_TYPES.has(type) ? type : "other");
+
+/** A module version as reported (e.g. "1.2.0"), only when it is a plain numeric version; otherwise null. */
+const versionString = v => (typeof v === "string" && /^\d{1,4}(\.\d{1,6}){1,3}$/.test(v) ? v : null);
+
 /**
  * What Dxcufgb's Debug Recorder stores about Familiar Faces & Places when the GM records. Only counts, booleans and
  * this module's own enum values: never names, met-at / region / type texts, info, notes, roles, image paths or URLs.
@@ -466,7 +473,7 @@ function debugSnapshot() {
     integrations: {
       questLog: !!game.modules.get(QUEST_LOG_ID)?.active,
       questLogApi: questLogActive(),
-      questLogVersion: game.modules.get(QUEST_LOG_ID)?.active ? game.modules.get(QUEST_LOG_ID).version ?? null : null
+      questLogVersion: game.modules.get(QUEST_LOG_ID)?.active ? versionString(game.modules.get(QUEST_LOG_ID).version) : null
     },
     errors: errorSummary()
   };
@@ -595,7 +602,7 @@ Hooks.on("updateJournalEntry", (doc, changes, options, userId) => {
     const event = options?.[MODULE_ID];
     // Only this module's own event type and kind (enums), which store, and whether this client wrote it: never names.
     crumb("store.update", {
-      event: /^[a-zA-Z]{1,20}$/.test(event?.type ?? "") ? event.type : "none",
+      event: eventType(event?.type),
       kind: store.KINDS.includes(event?.kind) ? event.kind : "none",
       store: doc.getFlag(MODULE_ID, "store") === "shared" ? "shared" : "private",
       own: userId === game.user.id
