@@ -220,9 +220,20 @@ export function mayAddFaces() {
   return game.user.isGM || !!game.settings.get(MODULE_ID, "playersCanAdd");
 }
 
-/** A fight is going on: a combat encounter that has started (round 1 or later). */
+/**
+ * A fight is going on here: a combat encounter that has started (round 1 or later) on the scene this user is viewing,
+ * or one not linked to any scene. Every client receives every combat in the world, so a started encounter left running
+ * on another scene doesn't count.
+ */
 export function inCombat() {
-  return !!game.combats?.some(c => c.started);
+  return !!game.combats?.some(c => c.started && combatIsHere(c));
+}
+
+/** Whether a combat is on the scene this user is viewing (or linked to no scene). */
+export function combatIsHere(combat) {
+  const sceneId = combat.scene?.id ?? combat._source?.scene ?? null;
+  if (!sceneId) return true;
+  return sceneId === (game.user.viewedScene ?? canvas?.scene?.id ?? null);
 }
 
 /**

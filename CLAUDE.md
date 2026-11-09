@@ -69,7 +69,8 @@ System-agnostic. No build step and no npm dependencies.
   (`assets/placeholders/factions/<id>.svg`, labels `DXFF.FactionLooks.*`), game-icons.net CC BY 3.0; a face or place
   stores the path as `img`. `canPickPlaceholder`: GM always, the face's editor while it has no real portrait. Picker in
   the "someone you met" dialog and the sheet's portrait tools (`pickPlaceholder`). Labels in `DXFF.Roles.*`.
-- Combat: `combatBlocks()` (util) = a player while any combat has started. `createFace`, `addKnower` and
+- Combat: `combatBlocks()` (util) = a player while a combat has started on the scene they view (or one
+  linked to no scene; `inCombat` / `combatIsHere`, re-checked at `canvasReady`). `createFace`, `addKnower` and
   `shareWithParty` throw `InCombat` for them, `canAddFaces`/`canShareFace` are false, and the token / selection menus
   show an "In combat" item instead of Add. `mayAddFaces` is the permission without the combat check. The tab header
   re-renders on combat start/end (`onCombatChange` in main.js).

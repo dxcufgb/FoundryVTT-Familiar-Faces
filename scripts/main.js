@@ -450,6 +450,7 @@ function debugSnapshot() {
     canUploadFiles: !!game.user.can?.("FILES_UPLOAD"),
     mayAdd: mayAddFaces(),
     inCombat: inCombat(),
+    startedCombats: (game.combats ?? []).filter(c => c.started).length,
     combatBlocksAdding: combatBlocks(),
     stores: {
       shared: !!store.getShared(),
@@ -659,7 +660,15 @@ function onCombatChange() {
 Hooks.on("combatStart", onCombatChange);
 Hooks.on("deleteCombat", onCombatChange);
 Hooks.on("updateCombat", (combat, changes) => {
-  if ("round" in changes || "active" in changes) onCombatChange();
+  if ("round" in changes || "active" in changes || "scene" in changes) onCombatChange();
+});
+// Only a fight on the scene the player is viewing counts, so moving to another scene can turn adding on or off.
+Hooks.on("canvasReady", () => {
+  try {
+    onCombatChange();
+  } catch (err) {
+    console.error(`${MODULE_ID} | combat change`, err);
+  }
 });
 
 // User names and colours show on notes.
