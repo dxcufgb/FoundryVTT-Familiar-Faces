@@ -54,9 +54,9 @@ System-agnostic. No build step and no npm dependencies.
   `editFactionRole`, `unlinkFactionLink`, `openLinked`); faction link pills use the `link-list.hbs` partial. Templates
   share the `portrait.hbs`, `notes.hbs` and `link-list.hbs` partials.
 - `scripts/places.js` – the counterpart of npcs.js: Scenes directory item (GM, `addPlaceForAll`), *Add a place you
-  visited* (`addVisitedPlaceDialog`, `knownBy: [me]`). Places are not blocked during combat.
-- `scripts/factions.js` – *Add a faction you know of* (`addKnownFactionDialog`, `knownBy: [me]`). Factions are not
-  blocked during combat.
+  visited* (`addVisitedPlaceDialog`, `knownBy: [me]`). Blocked during combat like NPCs.
+- `scripts/factions.js` – *Add a faction you know of* (`addKnownFactionDialog`, `knownBy: [me]`). Blocked during combat
+  like NPCs.
 - `scripts/quest-links.js` – Dxcufgb's Quest log: `addEntryNote` runs a new note's text through `autoLinkQuestLog`
   (world setting `questLogLinks`): the first whole-word mention of each quest title / reward name / party note title
   from the Quest log's API (`quests()`, `rewards()`, `partyNotes()`: only what the user may see) becomes
@@ -69,9 +69,12 @@ System-agnostic. No build step and no npm dependencies.
   (`assets/placeholders/factions/<id>.svg`, labels `DXFF.FactionLooks.*`), game-icons.net CC BY 3.0; a face or place
   stores the path as `img`. `canPickPlaceholder`: GM always, the face's editor while it has no real portrait. Picker in
   the "someone you met" dialog and the sheet's portrait tools (`pickPlaceholder`). Labels in `DXFF.Roles.*`.
-- Combat: `combatBlocks()` (util) = a player while any combat has started. `createFace`, `addKnower` and
-  `shareWithParty` throw `InCombat` for them, `canAddFaces`/`canShareFace` are false, and the token / selection menus
-  show an "In combat" item instead of Add. `mayAddFaces` is the permission without the combat check. The tab header
+- Combat: `combatBlocks()` (util) = a player while a combat has started on the scene they view (or one
+  linked to no scene; `inCombat` / `combatIsHere`, re-checked at `canvasReady`). It applies to NPCs, places and
+  factions alike: `createEntry`, `addKnowerTo` and `shareEntryWithParty` throw (`inCombatKey(kind)`: `InCombat` /
+  `InCombatPlace` / `InCombatFaction`) for them, `canAddFaces`/`canAddPlaces`/`canAddFactions`/`canShareEntry` are
+  false, the tab's Add and footer buttons show disabled, and the token / selection menus show an "In combat" item
+  instead of Add. `mayAddFaces` is the permission without the combat check. The tab header
   re-renders on combat start/end (`onCombatChange` in main.js).
 - `scripts/nameplates.js` – responsible GM: every token (all scenes + the prototype token) of an NPC whose face has no
   `knownBy` gets `displayName: HOVER` unless it already shows to everyone (HOVER/ALWAYS); matched by `face.actor`, NPC

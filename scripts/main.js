@@ -1,5 +1,6 @@
 import {
-  MODULE_ID, QUEST_LOG_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM, combatBlocks, mayAddFaces, inCombat
+  MODULE_ID, QUEST_LOG_ID, TEMPLATE_PATH, VISIBILITY, t, escapeHTML, isResponsibleGM, combatBlocks, mayAddFaces, inCombat,
+  inCombatKey
 } from "./util.js";
 import * as store from "./store.js";
 import { FacesTab, MODES, GROUP_MODES, PLACE_GROUP_MODES, FACTION_GROUP_MODES, SORT_MODES } from "./apps/faces-tab.js";
@@ -223,8 +224,8 @@ function apiCreate(kind) {
     if (!game.user.isGM) {
       const knownBy = Array.isArray(data?.knownBy) ? [...new Set(data.knownBy.filter(Boolean))] : [];
       const ownList = knownBy.length > 0 && knownBy.every(userId => userId === game.user.id);
-      if (kind === "faces" && combatBlocks()) {
-        refuse("InCombat");
+      if (combatBlocks()) {
+        refuse(inCombatKey(kind));
         return null;
       }
       if (knownBy.length && !ownList) {
@@ -310,8 +311,8 @@ function apiShare(kind) {
       return false;
     }
     if (!entry.knownBy) return false;
-    if (kind === "faces" && combatBlocks()) {
-      refuse("InCombat");
+    if (combatBlocks()) {
+      refuse(inCombatKey(kind));
       return false;
     }
     if (!store.canShareEntry(entry)) {
@@ -450,6 +451,7 @@ function debugSnapshot() {
     canUploadFiles: !!game.user.can?.("FILES_UPLOAD"),
     mayAdd: mayAddFaces(),
     inCombat: inCombat(),
+    startedCombats: (game.combats ?? []).filter(c => c.started).length,
     combatBlocksAdding: combatBlocks(),
     stores: {
       shared: !!store.getShared(),
@@ -659,7 +661,15 @@ function onCombatChange() {
 Hooks.on("combatStart", onCombatChange);
 Hooks.on("deleteCombat", onCombatChange);
 Hooks.on("updateCombat", (combat, changes) => {
-  if ("round" in changes || "active" in changes) onCombatChange();
+  if ("round" in changes || "active" in changes || "scene" in changes) onCombatChange();
+});
+// Only a fight on the scene the player is viewing counts, so moving to another scene can turn adding on or off.
+Hooks.on("canvasReady", () => {
+  try {
+    onCombatChange();
+  } catch (err) {
+    console.error(`${MODULE_ID} | combat change`, err);
+  }
 });
 
 // User names and colours show on notes.

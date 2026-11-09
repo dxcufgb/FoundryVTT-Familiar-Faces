@@ -205,14 +205,19 @@ export function canAddFaces() {
   return mayAddFaces() && !combatBlocks();
 }
 
-/** Who may add new places: the same people as for NPCs; a fight doesn't stop anyone from noting where they are. */
+/** Who may add new places: the same people as for NPCs, and not during a fight either. */
 export function canAddPlaces() {
-  return mayAddFaces();
+  return mayAddFaces() && !combatBlocks();
 }
 
-/** Who may add new factions: the same people as for places, combat or not. */
+/** Who may add new factions: the same people as for NPCs, and not during a fight either. */
 export function canAddFactions() {
-  return mayAddFaces();
+  return mayAddFaces() && !combatBlocks();
+}
+
+/** The "in combat" warning for a kind of entry (faces / places / factions). */
+export function inCombatKey(kind) {
+  return { places: "InCombatPlace", factions: "InCombatFaction" }[kind] ?? "InCombat";
 }
 
 /** Who may add faces at all, combat aside. */
@@ -220,14 +225,26 @@ export function mayAddFaces() {
   return game.user.isGM || !!game.settings.get(MODULE_ID, "playersCanAdd");
 }
 
-/** A fight is going on: a combat encounter that has started (round 1 or later). */
+/**
+ * A fight is going on here: a combat encounter that has started (round 1 or later) on the scene this user is viewing,
+ * or one not linked to any scene. Every client receives every combat in the world, so a started encounter left running
+ * on another scene doesn't count.
+ */
 export function inCombat() {
-  return !!game.combats?.some(c => c.started);
+  return !!game.combats?.some(c => c.started && combatIsHere(c));
+}
+
+/** Whether a combat is on the scene this user is viewing (or linked to no scene). */
+export function combatIsHere(combat) {
+  const sceneId = combat.scene?.id ?? combat._source?.scene ?? null;
+  if (!sceneId) return true;
+  return sceneId === (game.user.viewedScene ?? canvas?.scene?.id ?? null);
 }
 
 /**
- * Nobody has time to memorize a face in the middle of a fight: while a combat is running, players can't add faces
- * (to their own list or the party's) or share them with the party. The GM still can.
+ * Nobody has time to memorize a face, a place or a faction in the middle of a fight: while a combat is running on the
+ * player's scene, players can't add NPCs, places or factions (to their own list or the party's) or share them with the
+ * party. The GM still can.
  */
 export function combatBlocks() {
   return !game.user.isGM && inCombat();

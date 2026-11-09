@@ -1,4 +1,4 @@
-import { t, escapeHTML, cleanLine, uniqueSuggestions, randomId } from "./util.js";
+import { t, escapeHTML, cleanLine, uniqueSuggestions, randomId, combatBlocks } from "./util.js";
 import * as store from "./store.js";
 import { FactionSheet } from "./apps/faction-sheet.js";
 import { placeholderGridHTML, isPlaceholder } from "./placeholders.js";
@@ -31,6 +31,7 @@ export async function addFactionForMe(faction) {
 /** Player: adds a faction they know of to their own list, then opens it so they can write notes. */
 export async function addKnownFactionDialog() {
   if (!store.ready()) return ui.notifications.warn(t("NotReady"));
+  if (combatBlocks()) return ui.notifications.warn(t("InCombatFaction"));
   const id = `dxff-faction-${randomId()}`;
   const categories = uniqueSuggestions(store.allFactions().map(f => f.category));
   const content = `

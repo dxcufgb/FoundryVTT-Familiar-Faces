@@ -9,7 +9,7 @@
     <i class="{{addIcon}}" inert></i> {{addLabel}}
   </button>
   {{else if addBlocked}}
-  <span class="dxff-add-blocked" data-tooltip="DXFF.InCombat">
+  <span class="dxff-add-blocked" data-tooltip="{{blockedHint}}">
     <button type="button" class="dxff-add-face" disabled><i class="fa-solid fa-swords" inert></i> {{addLabel}}</button>
   </span>
   {{/if}}
