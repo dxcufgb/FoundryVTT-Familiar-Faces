@@ -1,5 +1,5 @@
 import {
-  MODULE_ID, TEMPLATE_PATH, t, nameHue, initials, canAddFaces, canAddPlaces, canAddFactions, mayAddFaces, combatBlocks, userInfo
+  MODULE_ID, TEMPLATE_PATH, t, nameHue, initials, canAddFaces, canAddPlaces, canAddFactions, mayAddFaces, combatBlocks, inCombatKey, userInfo
 } from "../util.js";
 import * as store from "../store.js";
 import { tokenize, matchFace, matchPlace, matchFaction, highlight } from "../search.js";
@@ -186,14 +186,15 @@ export class FacesTab extends HandlebarsApplicationMixin(AbstractSidebarTab) {
       })),
       isGM: game.user.isGM,
       canAdd,
-      addBlocked: mode === "faces" && mayAddFaces() && combatBlocks(),
+      addBlocked: mayAddFaces() && combatBlocks(),
+      blockedHint: `DXFF.${inCombatKey(mode)}`,
       addLabel: t(config.add),
       addHint: t(config.addHint),
       addIcon: config.addIcon,
       searchPlaceholder: t(config.searchPlaceholder),
       searchLabel: t(config.search),
       canAddMet: !game.user.isGM && ready,
-      metBlocked: mode === "faces" && combatBlocks(),
+      metBlocked: combatBlocks(),
       metLabel: t(config.met),
       metHint: t(config.metHint),
       metIcon: config.metIcon,

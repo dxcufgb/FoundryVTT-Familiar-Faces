@@ -1,4 +1,4 @@
-import { MODULE_ID, VISIBILITY, t, isResponsibleGM, randomId, cleanLine, combatBlocks } from "./util.js";
+import { MODULE_ID, VISIBILITY, t, isResponsibleGM, randomId, cleanLine, combatBlocks, inCombatKey } from "./util.js";
 import { autoLinkQuestLog } from "./quest-links.js";
 import { crumb } from "./debug-recorder.js";
 
@@ -40,9 +40,9 @@ export function kindOf(kind) {
 const entriesPath = kind => `flags.${MODULE_ID}.${kindOf(kind)}`;
 const notesPath = kind => `flags.${MODULE_ID}.${NOTE_KEYS[kindOf(kind)]}`;
 
-/** Players can't add or share NPCs during a fight; places and factions aren't affected. */
+/** Players can't add or share NPCs, places or factions during a fight on their scene. */
 function blocked(kind) {
-  return kindOf(kind) === "faces" && combatBlocks();
+  return !!kind && combatBlocks();
 }
 
 /* -------------------------------------------- */
@@ -284,7 +284,7 @@ function cleanFields(kind, changes) {
  */
 export async function createEntry(kind, { name, knownBy = null, ...rest } = {}) {
   kind = kindOf(kind);
-  if (blocked(kind)) throw new Error(t("InCombat"));
+  if (blocked(kind)) throw new Error(t(inCombatKey(kind)));
   const clean = cleanLine(name, NAME_MAX[kind]);
   if (!clean) throw new Error(t("NameRequired"));
   const id = randomId();
@@ -317,7 +317,7 @@ export async function createEntry(kind, { name, knownBy = null, ...rest } = {}) 
 /** Adds a face or place that only some players know to a player's list. */
 export async function addKnowerTo(kind, id, userId = game.user.id) {
   kind = kindOf(kind);
-  if (blocked(kind)) throw new Error(t("InCombat"));
+  if (blocked(kind)) throw new Error(t(inCombatKey(kind)));
   const entry = getEntry(kind, id, { any: true });
   if (!entry) throw new Error(t(GONE[kind]));
   if (!entry.knownBy || entry.knownBy.includes(userId)) return false;
@@ -335,7 +335,7 @@ export async function addKnowerTo(kind, id, userId = game.user.id) {
  */
 export async function shareEntryWithParty(kind, id) {
   kind = kindOf(kind);
-  if (blocked(kind)) throw new Error(t("InCombat"));
+  if (blocked(kind)) throw new Error(t(inCombatKey(kind)));
   const entry = getEntry(kind, id, { any: game.user.isGM });
   if (!entry) throw new Error(t(GONE[kind]));
   if (!canShareEntry(entry)) return false;

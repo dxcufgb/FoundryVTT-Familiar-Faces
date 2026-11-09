@@ -1,6 +1,6 @@
 import {
   MODULE_ID, QUEST_LOG_ID, t, escapeHTML, cleanLine, cleanName, imagesIn, imagesInPage, currentSceneName, placeSuggestions,
-  uniqueSuggestions, canAddFaces, canAddPlaces, canAddFactions, mayAddFaces, combatBlocks, randomId
+  uniqueSuggestions, canAddFaces, canAddPlaces, canAddFactions, mayAddFaces, combatBlocks, inCombatKey, randomId
 } from "./util.js";
 import * as store from "./store.js";
 import { EntrySheet } from "./apps/entry-sheet.js";
@@ -75,7 +75,7 @@ export async function addEntryDialog(kind, {
     return null;
   }
   if (!canAdd(kind)) {
-    ui.notifications.warn(t(kind === "faces" && combatBlocks() ? "InCombat" : "CannotAdd"));
+    ui.notifications.warn(t(combatBlocks() ? inCombatKey(kind) : "CannotAdd"));
     return null;
   }
   name = cleanName(name, texts.nameMax);
@@ -484,7 +484,7 @@ function selectionItems(found) {
   if (place) items.push({ icon: "fa-solid fa-map-location-dot", label: t("Ctx.OpenPlace", { name: place.name }), run: () => PlaceSheet.open(place.id) });
   if (faction) items.push({ icon: "fa-solid fa-shield-halved", label: t("Ctx.OpenFaction", { name: faction.name }), run: () => FactionSheet.open(faction.id) });
   if (combatBlocks()) {
-    items.push({ icon: "fa-solid fa-swords", label: t("Ctx.InCombat"), run: () => ui.notifications.info(t("InCombat")) });
+    items.push({ icon: "fa-solid fa-swords", label: t("Ctx.InCombatAny"), run: () => ui.notifications.info(t("InCombatAny")) });
   } else {
     items.push({
       icon: "fa-solid fa-user-plus",
@@ -492,7 +492,6 @@ function selectionItems(found) {
       run: () => addEntryDialog("faces", { name: found.name, images: found.images, source: link(found.source) })
     });
   }
-  // Places don't wait for the fight to end.
   if (canAddPlaces()) {
     items.push({
       icon: "fa-solid fa-map-pin",

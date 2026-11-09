@@ -1,7 +1,7 @@
 <footer class="dxff-tab-footer"{{#unless canAddMet}} hidden{{/unless}}>
   {{#if canAddMet}}
   {{#if metBlocked}}
-  <span class="dxff-add-blocked dxff-add-met-wrap" data-tooltip="DXFF.InCombat">
+  <span class="dxff-add-blocked dxff-add-met-wrap" data-tooltip="{{blockedHint}}">
     <button type="button" class="dxff-add-met" disabled><i class="fa-solid fa-swords" inert></i> {{metLabel}}</button>
   </span>
   {{else}}

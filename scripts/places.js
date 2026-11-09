@@ -1,4 +1,4 @@
-import { t, escapeHTML, cleanLine, currentSceneName, placeSuggestions, randomId } from "./util.js";
+import { t, escapeHTML, cleanLine, currentSceneName, placeSuggestions, randomId, combatBlocks } from "./util.js";
 import * as store from "./store.js";
 import { PlaceSheet } from "./apps/place-sheet.js";
 import { placeholderGridHTML, isPlaceholder } from "./placeholders.js";
@@ -80,6 +80,7 @@ export async function addPlaceForAll(place) {
  */
 export async function addVisitedPlaceDialog() {
   if (!store.ready()) return ui.notifications.warn(t("NotReady"));
+  if (combatBlocks()) return ui.notifications.warn(t("InCombatPlace"));
   const id = `dxff-visit-${randomId()}`;
   const regions = placeSuggestions([...store.allPlaces().map(p => p.region), ...store.allPlaces().map(p => p.name)]);
   const scene = canvas?.scene ?? game.scenes?.viewed;
