@@ -39,7 +39,7 @@ The full guide is in the [wiki](https://github.com/dxcufgb/FoundryVTT-Familiar-F
 - [For Players](https://github.com/dxcufgb/FoundryVTT-Familiar-Faces/wiki/For-Players): your own NPCs, notes and who can read them
 - [Places and Factions](https://github.com/dxcufgb/FoundryVTT-Familiar-Faces/wiki/Places-and-Factions): places, factions, members and roles
 - [Works with Quest Log](https://github.com/dxcufgb/FoundryVTT-Familiar-Faces/wiki/Works-with-Quest-Log): links to [Dxcufgb's Quest log](https://github.com/dxcufgb/FoundryVTT-quest-log/wiki)
-- [Settings](https://github.com/dxcufgb/FoundryVTT-Familiar-Faces/wiki/Settings): every option, no new NPCs, places or factions during a fight on your scene, names on hover
+- [Settings](https://github.com/dxcufgb/FoundryVTT-Familiar-Faces/wiki/Settings): every option, players add no NPCs, places or factions during a fight on their scene (the GM always can), names on hover
 - [API](https://github.com/dxcufgb/FoundryVTT-Familiar-Faces/wiki/API): for macro and module authors
 - [Troubleshooting](https://github.com/dxcufgb/FoundryVTT-Familiar-Faces/wiki/Troubleshooting)
 - [Credits](https://github.com/dxcufgb/FoundryVTT-Familiar-Faces/wiki/Credits)
